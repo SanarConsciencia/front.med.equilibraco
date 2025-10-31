@@ -12,6 +12,15 @@ export interface MedicoResponse {
   // otros campos según la API
 }
 
+export interface CustomerPermissionResponse {
+  customer_uuid: string;
+  customer_name: string;
+  permissions: string[];
+  granted_at: string;
+  expires_at?: string;
+  // otros campos que pueda tener
+}
+
 export const api = {
   login: async (username: string, password: string): Promise<LoginResponse> => {
     const response = await fetch(`${BASE_URL}/api/v1/auth/login`, {
@@ -38,6 +47,34 @@ export const api = {
 
     if (!response.ok) {
       throw new Error('Failed to get user info');
+    }
+
+    return response.json();
+  },
+
+  getCustomers: async (token: string): Promise<CustomerPermissionResponse[]> => {
+    const response = await fetch(`${BASE_URL}/api/v1/customers`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to get customers');
+    }
+
+    return response.json();
+  },
+
+  getCustomerPermissions: async (token: string, customerUuid: string): Promise<CustomerPermissionResponse> => {
+    const response = await fetch(`${BASE_URL}/api/v1/customers/${customerUuid}/permissions`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to get customer permissions');
     }
 
     return response.json();

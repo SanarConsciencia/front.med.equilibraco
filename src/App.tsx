@@ -2,7 +2,8 @@ import { Routes, Route } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useAppStore } from './stores/appStore'
 import Home from './pages/Home'
-import Patients from './pages/Patients'
+import Customers from './pages/Customers'
+import CustomerDetail from './pages/CustomerDetail'
 import Login from './pages/Login'
 import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
@@ -29,10 +30,17 @@ function App() {
               </Container>
             </ProtectedRoute>
           } />
-          <Route path="/patients" element={
+          <Route path="/customers" element={
             <ProtectedRoute>
               <Container maxWidth="full" className="py-8">
-                <Patients />
+                <Customers />
+              </Container>
+            </ProtectedRoute>
+          } />
+          <Route path="/customers/:customer_uuid" element={
+            <ProtectedRoute>
+              <Container maxWidth="full" className="py-8">
+                <CustomerDetail />
               </Container>
             </ProtectedRoute>
           } />
