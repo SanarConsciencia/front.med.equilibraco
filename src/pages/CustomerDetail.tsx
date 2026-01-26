@@ -133,7 +133,7 @@ const CustomerDetail: React.FC = () => {
         {/* Permisos */}
         <Card>
           <h3 className="text-lg font-medium text-gray-900 mb-4">Permisos Otorgados</h3>
-          {customer.permissions.length > 0 ? (
+          {customer.permissions && Array.isArray(customer.permissions) && customer.permissions.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {customer.permissions.map((permission, index) => (
                 <div

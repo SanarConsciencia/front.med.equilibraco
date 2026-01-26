@@ -12,6 +12,21 @@ export interface MedicoResponse {
   // otros campos según la API
 }
 
+export interface Customer {
+  customer_uuid: string;
+  customer_email: string;
+  customer_full_name: string;
+  customer_phone: string | null;
+  subscription_status: string;
+  service_requested: string;
+  custom_message: string | null;
+  is_active: boolean;
+  id: number;
+  medico_id: string;
+  granted_at: string;
+  revoked_at: string | null;
+}
+
 export interface CustomerPermissionResponse {
   customer_uuid: string;
   customer_name: string;
@@ -52,7 +67,7 @@ export const api = {
     return response.json();
   },
 
-  getCustomers: async (token: string): Promise<CustomerPermissionResponse[]> => {
+  getCustomers: async (token: string): Promise<Customer[]> => {
     const response = await fetch(`${BASE_URL}/api/v1/customers`, {
       headers: {
         'Authorization': `Bearer ${token}`,

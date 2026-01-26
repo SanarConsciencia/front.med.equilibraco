@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom'
 import { Card, Container, Button } from '../components/ui'
 import { useAppStore } from '../stores/appStore'
 import { api } from '../services/api'
-import type { CustomerPermissionResponse } from '../services/api'
+import type { Customer } from '../services/api'
 import { formatDateColombian } from '../utils/date'
 
 const Customers: React.FC = () => {
-  const [customers, setCustomers] = useState<CustomerPermissionResponse[]>([])
+  const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const { token } = useAppStore()
@@ -94,7 +94,7 @@ const Customers: React.FC = () => {
                         </div>
                       </div>
                       <div className="ml-3 flex-1">
-                        <h3 className="text-sm font-medium text-gray-900">{customer.customer_name}</h3>
+                        <h3 className="text-sm font-medium text-gray-900">{customer.customer_full_name}</h3>
                         <p className="text-sm text-gray-500">{customer.customer_uuid}</p>
                       </div>
                     </div>
@@ -106,29 +106,15 @@ const Customers: React.FC = () => {
                   </div>
 
                   <div className="mt-4 space-y-2">
-                    <div>
-                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Permisos</span>
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {customer.permissions.map((permission, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800"
-                          >
-                            {permission}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Otorgado</span>
                         <p className="mt-1 text-gray-900">{formatDateColombian(customer.granted_at)}</p>
                       </div>
                       <div>
-                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Expira</span>
+                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Revocado</span>
                         <p className="mt-1 text-gray-900">
-                          {customer.expires_at ? formatDateColombian(customer.expires_at) : 'Sin expiración'}
+                          {customer.revoked_at ? formatDateColombian(customer.revoked_at) : 'Activo'}
                         </p>
                       </div>
                     </div>
@@ -147,13 +133,13 @@ const Customers: React.FC = () => {
                     Customer
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Permisos
+                    Estado
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Otorgado
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Expira
+                    Revocado
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Acciones
@@ -173,28 +159,23 @@ const Customers: React.FC = () => {
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{customer.customer_name}</div>
+                          <div className="text-sm font-medium text-gray-900">{customer.customer_full_name}</div>
                           <div className="text-sm text-gray-500">{customer.customer_uuid}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-wrap gap-1">
-                        {customer.permissions.map((permission, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
-                          >
-                            {permission}
-                          </span>
-                        ))}
-                      </div>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        customer.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {customer.is_active ? 'Activo' : 'Inactivo'}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {formatDateColombian(customer.granted_at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {customer.expires_at ? formatDateColombian(customer.expires_at) : 'Sin expiración'}
+                      {customer.revoked_at ? formatDateColombian(customer.revoked_at) : 'Activo'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                       <Link to={`/customers/${customer.customer_uuid}`}>
