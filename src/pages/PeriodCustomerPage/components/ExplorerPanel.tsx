@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
-import type { ViewType } from '../types'
+import type { ViewType, Tab } from '../types'
 import type { BulkComplianceResponse } from '../../../types/medicalApiTypes'
 
 interface ExplorerPanelProps {
-  activeView: ViewType
+  tabs: Tab[]
+  activeTabId: string | null
   complianceData: BulkComplianceResponse
-  onViewChange: (view: ViewType, dayIndex?: number) => void
+  onTabOpen: (viewType: ViewType, dayIndex?: number | null) => void
 }
 
 interface NavItem {
@@ -16,9 +17,10 @@ interface NavItem {
 }
 
 export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
-  activeView,
+  tabs,
+  activeTabId,
   complianceData,
-  onViewChange
+  onTabOpen
 }) => {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
 
@@ -53,6 +55,11 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
   const isDaysExpanded = expandedSections.has('days')
   const isPeriodSummaryExpanded = expandedSections.has('period-summary')
 
+  // Helper to check if a view type is active in any tab
+  const isViewActive = (viewType: ViewType) => {
+    return tabs.some(tab => tab.id === activeTabId && tab.viewType === viewType)
+  }
+
   return (
     <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto text-gray-700 dark:text-gray-200">
       <div className="p-3">
@@ -65,15 +72,15 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
                   if (item.id === 'days' || item.id === 'period-summary') {
                     toggleSection(item.id)
                   } else {
-                    onViewChange(item.id)
+                    onTabOpen(item.id)
                   }
                 }}
                 className={`w-full text-left px-3 py-2 rounded text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-600 flex items-center justify-between ${
-                  activeView === item.id && item.id !== 'days' && item.id !== 'period-summary'
+                  isViewActive(item.id) && item.id !== 'days' && item.id !== 'period-summary'
                     ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white'
                     : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
-                aria-pressed={activeView === item.id}
+                aria-pressed={isViewActive(item.id)}
               >
                 <span className="flex items-center">
                   <span className="mr-2">{item.icon}</span>
@@ -102,7 +109,7 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
                   {complianceData.days.map((day, idx) => (
                     <button
                       key={idx}
-                      onClick={() => onViewChange('day-detail', idx)}
+                      onClick={() => onTabOpen('day-detail', idx)}
                       className="w-full text-left px-3 py-1.5 rounded text-xs transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
                     >
                       <span className="mr-2">📄</span>
@@ -118,9 +125,9 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
                   {periodSummaryItems.map((subItem) => (
                     <button
                       key={subItem.id}
-                      onClick={() => onViewChange(subItem.id)}
+                      onClick={() => onTabOpen(subItem.id)}
                       className={`w-full text-left px-3 py-1.5 rounded text-xs transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                        activeView === subItem.id
+                        isViewActive(subItem.id)
                           ? 'bg-gray-100 text-gray-900 dark:bg-gray-600 dark:text-white font-medium'
                           : 'text-gray-600 dark:text-gray-300'
                       }`}

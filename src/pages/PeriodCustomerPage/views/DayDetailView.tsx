@@ -1,5 +1,6 @@
 import React from 'react'
 import type { DayAnalysisResponse } from '../../../types/medicalApiTypes'
+import { DayHeader } from './day/Header' 
 
 interface DayDetailViewProps {
   dayData: DayAnalysisResponse
@@ -7,19 +8,52 @@ interface DayDetailViewProps {
 
 export const DayDetailView: React.FC<DayDetailViewProps> = ({ dayData }) => {
   return (
-    <div className="space-y-6 p-4 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200">
-      <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Día: {dayData.day.date}
-        </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-          Compliance General: <span className="font-semibold text-indigo-600 dark:text-indigo-400">{dayData.compliance.overall.toFixed(1)}%</span>
-        </p>
+    <div className="space-y-6 px-4 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+      <DayHeader dayData={dayData} />
+
+      {/* Platos del día */}
+      <div>
+        <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Platos del día</h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          {(dayData.day.meals ?? []).map((meal, idx) => (
+            <div
+              key={idx}
+              className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded p-3"
+            >
+              <div className="flex items-start justify-between mb-2">
+                <h4 className="font-semibold text-sm text-gray-900 dark:text-white">{meal.meal_name}</h4>
+                <div className="flex items-center gap-2">
+                  {meal.meal_type && (
+                    <span className={`px-2 py-0.5 rounded text-xs ${
+                      meal.meal_type === 'main' ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300' : meal.meal_type === 'periworkout' ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                    }`}>{meal.meal_type}</span>
+                  )}
+                  {meal.meal_time && <span className="text-xs text-gray-500 dark:text-gray-400">{meal.meal_time}</span>}
+                </div>
+              </div>
+
+              <div className="text-xs text-gray-600 dark:text-gray-400">
+                {meal.ingredients && meal.ingredients.length > 0 ? (
+                  <ul className="space-y-1">
+                    {meal.ingredients.map((ing, i) => (
+                      <li key={i} className="flex justify-between">
+                        <span className="truncate">{ing.food_name}</span>
+                        <span className="ml-2 text-gray-700 dark:text-gray-300">{(ing.quantity !== undefined && ing.quantity !== null) ? `${ing.quantity}${ing.unit ? ` ${ing.unit}` : ''}` : (ing.unit ?? '')}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="text-sm text-gray-500 dark:text-gray-400">No hay ingredientes registrados</div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Compliance by Slot */}
       <div>
-        <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Compliance por Slot</h3>
+        <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Compliance por slot</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {dayData.compliance.by_slot.map((slot, idx) => (
             <div
@@ -110,6 +144,8 @@ export const DayDetailView: React.FC<DayDetailViewProps> = ({ dayData }) => {
           ))}
         </div>
       </div>
+
+      
 
       {/* Tracking Info */}
       {dayData.tracking && (

@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Container, Button } from '../../components/ui'
 import { useCompliance } from '../../hooks/useCompliance'
 import { useUiStore } from '../../stores/uiStore'
-import type { ViewType } from './types'
+import type { ViewType, Tab } from './types'
 import { TopBar } from './components/TopBar'
 import { LeftSidebar } from './components/LeftSidebar'
 import { ExplorerPanel } from './components/ExplorerPanel'
@@ -21,9 +21,11 @@ const PeriodCustomerPage: React.FC = () => {
   // Layout state
   const [leftSidebarExpanded, setLeftSidebarExpanded] = useState(true)
   const [rightSidebarExpanded, setRightSidebarExpanded] = useState(false)
-  const [activeView, setActiveView] = useState<ViewType>('overview')
-  const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null)
   const [notes, setNotes] = useState('')
+
+  // Tab system state
+  const [tabs, setTabs] = useState<Tab[]>([])
+  const [activeTabId, setActiveTabId] = useState<string | null>(null)
 
   // Notes resizer state
   const [notesHeight, setNotesHeight] = useState<number>(192) // px (h-48 ~ 192px)
@@ -54,6 +56,73 @@ const PeriodCustomerPage: React.FC = () => {
     setShowNavbar(false)
     return () => setShowNavbar(true)
   }, [])
+
+  // Helper function to generate tab label
+  const getTabLabel = (viewType: ViewType, dayIndex?: number | null): string => {
+    const labels: Record<ViewType, string> = {
+      'overview': 'Resumen',
+      'period-summary': 'Resumen del Período',
+      'days': 'Días',
+      'day-detail': dayIndex !== undefined && dayIndex !== null ? `Día ${dayIndex + 1}` : 'Detalle del Día',
+      'inflammatory': 'Inflamatorio',
+      'nutrient-trends': 'Tendencias de Nutrientes',
+      'meal-analysis': 'Análisis de Comidas',
+      'tracking': 'Seguimiento',
+      'health-monitoring': 'Monitoreo de Salud',
+      'period-tracking': 'Seguimiento del Período',
+      'period-nutrient-variety': 'Variedad de Nutrientes',
+      'period-inflammatory': 'Análisis Inflamatorio',
+      'period-nutrient-trends': 'Tendencias de Nutrientes',
+      'period-meal-analysis': 'Análisis de Comidas',
+      'period-health-monitoring': 'Monitoreo de Salud',
+      'period-ingredient-consumption': 'Consumo de Ingredientes',
+    }
+    return labels[viewType] || viewType
+  }
+
+  // Tab management functions
+  const openTab = (viewType: ViewType, dayIndex?: number | null) => {
+    // Check if tab already exists
+    const existingTab = tabs.find(
+      (t) => t.viewType === viewType && t.dayIndex === dayIndex
+    )
+
+    if (existingTab) {
+      // Just activate existing tab
+      setActiveTabId(existingTab.id)
+    } else {
+      // Create new tab
+      const newTab: Tab = {
+        id: `${viewType}-${dayIndex ?? 'none'}-${Date.now()}`,
+        viewType,
+        label: getTabLabel(viewType, dayIndex),
+        dayIndex,
+      }
+      setTabs((prev) => [...prev, newTab])
+      setActiveTabId(newTab.id)
+    }
+  }
+
+  const closeTab = (tabId: string) => {
+    setTabs((prev) => {
+      const newTabs = prev.filter((t) => t.id !== tabId)
+      
+      // If closing active tab, activate another tab
+      if (activeTabId === tabId && newTabs.length > 0) {
+        const closedIndex = prev.findIndex((t) => t.id === tabId)
+        const newActiveIndex = closedIndex > 0 ? closedIndex - 1 : 0
+        setActiveTabId(newTabs[newActiveIndex].id)
+      } else if (newTabs.length === 0) {
+        setActiveTabId(null)
+      }
+      
+      return newTabs
+    })
+  }
+
+  const selectTab = (tabId: string) => {
+    setActiveTabId(tabId)
+  }
 
   const handleBack = () => {
     clearCompliance()
@@ -113,22 +182,24 @@ const PeriodCustomerPage: React.FC = () => {
             {/* Left Sidebar - Explorer Panel */}
             {leftSidebarExpanded && (
               <ExplorerPanel
-                activeView={activeView}
+                tabs={tabs}
+                activeTabId={activeTabId}
                 complianceData={complianceData}
-                onViewChange={(view, dayIndex) => {
-                  setActiveView(view)
-                  if (dayIndex !== undefined) {
-                    setSelectedDayIndex(dayIndex)
-                  }
-                }}
+                onTabOpen={openTab}
               />
             )}
 
             {/* Center Panel */}
             <div className="flex-1 flex flex-col">
               {/* DataView - Top Section */}
-              <div className="flex-1 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 overflow-y-auto p-4">
-                <DataView activeView={activeView} complianceData={complianceData} selectedDayIndex={selectedDayIndex} />
+              <div className="flex-1 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 overflow-hidden">
+                <DataView
+                  tabs={tabs}
+                  activeTabId={activeTabId}
+                  complianceData={complianceData}
+                  onTabSelect={selectTab}
+                  onTabClose={closeTab}
+                />
               </div>
 
               {/* Resizer */}

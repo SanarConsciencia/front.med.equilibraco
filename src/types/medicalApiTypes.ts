@@ -32,10 +32,36 @@ export interface SerializedDayIntake {
   pattern_id?: string | null;
   training_day?: boolean | null;
   notes?: string | null;
+  // Meals for the day (if provided by the source)
+  meals?: SerializedMeal[];
   created_at: string; // ISO datetime string
   updated_at?: string | null; // ISO datetime string
   // Additional fields that might be included in serialized response
   [key: string]: any; // For flexibility with additional dynamic fields
+}
+
+// Serialized meal & ingredient types (from example payload)
+export interface SerializedMeal {
+  id: number;
+  meal_name: string;
+  meal_type?: string | null; // e.g. "main", "snack"
+  slot_id?: string | null; // e.g. "main_1"
+  slot_order?: number | null;
+  meal_time?: string | null; // HH:MM
+  is_favorite?: boolean | null;
+  notes?: string | null;
+  ingredients?: SerializedMealIngredient[];
+  // allow extra fields for forward compatibility
+  [key: string]: any;
+}
+
+export interface SerializedMealIngredient {
+  id: number;
+  food_id: number;
+  food_name: string;
+  quantity?: number | null; // units are in `unit` field
+  unit?: string | null; // e.g. "g", "ml", "porción"
+  [key: string]: any;
 }
 
 export interface CustomerInfo {

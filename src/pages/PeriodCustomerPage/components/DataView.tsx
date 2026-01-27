@@ -1,6 +1,7 @@
 import React from 'react'
-import type { ViewType } from '../types'
+import type { Tab } from '../types'
 import type { BulkComplianceResponse } from '../../../types/medicalApiTypes'
+import { TabBar } from './TabBar'
 import { OverviewView } from '../views/OverviewView'
 import { DaysView } from '../views/DaysView'
 import { PeriodSummaryView } from '../views/PeriodSummaryView'
@@ -15,27 +16,39 @@ import { PeriodIngredientConsumptionView } from '../views/PeriodIngredientConsum
 import { PlaceholderView } from '../views/PlaceholderView'
 
 interface DataViewProps {
-  activeView: ViewType
+  tabs: Tab[]
+  activeTabId: string | null
   complianceData: BulkComplianceResponse | null
-  selectedDayIndex?: number | null
+  onTabSelect: (tabId: string) => void
+  onTabClose: (tabId: string) => void
 }
 
-export const DataView: React.FC<DataViewProps> = ({ activeView, complianceData, selectedDayIndex }) => {
+export const DataView: React.FC<DataViewProps> = ({ tabs, activeTabId, complianceData, onTabSelect, onTabClose }) => {
   if (!complianceData) {
     return (
-      <div className="text-center py-4 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400">
-        Selecciona una sección para visualizar
+      <div className="h-full flex items-center justify-center bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400">
+        Selecciona una sección del explorador para comenzar
+      </div>
+    )
+  }
+
+  // Find active tab
+  const activeTab = tabs.find((t) => t.id === activeTabId)
+
+  if (!activeTab) {
+    return (
+      <div className="h-full flex items-center justify-center bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400">
+        Selecciona una sección del explorador para comenzar
       </div>
     )
   }
 
   let viewElement: React.ReactNode
 
-  switch (activeView) {
+  switch (activeTab.viewType) {
     case 'overview':
       viewElement = <OverviewView complianceData={complianceData} />
       break
-
 
     case 'period-summary':
       viewElement = <PeriodSummaryView complianceData={complianceData} />
@@ -46,10 +59,10 @@ export const DataView: React.FC<DataViewProps> = ({ activeView, complianceData, 
       break
 
     case 'day-detail':
-      if (selectedDayIndex !== null && selectedDayIndex !== undefined && complianceData.days[selectedDayIndex]) {
-        viewElement = <DayDetailView dayData={complianceData.days[selectedDayIndex]} />
+      if (activeTab.dayIndex !== null && activeTab.dayIndex !== undefined && complianceData.days[activeTab.dayIndex]) {
+        viewElement = <DayDetailView dayData={complianceData.days[activeTab.dayIndex]} />
       } else {
-        viewElement = <PlaceholderView title="Selecciona un día del explorador" />
+        viewElement = <PlaceholderView title="Día no encontrado" />
       }
       break
 
@@ -103,12 +116,23 @@ export const DataView: React.FC<DataViewProps> = ({ activeView, complianceData, 
       break
 
     default:
-      viewElement = <PlaceholderView title={activeView} />
+      viewElement = <PlaceholderView title={activeTab.viewType} />
   }
 
   return (
-    <div className="p-4 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-[270px]">
-      {viewElement}
+    <div className="h-full flex flex-col">
+      {/* Tab Bar */}
+      <TabBar
+        tabs={tabs}
+        activeTabId={activeTabId}
+        onTabSelect={onTabSelect}
+        onTabClose={onTabClose}
+      />
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-4 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+        {viewElement}
+      </div>
     </div>
   )
 }
