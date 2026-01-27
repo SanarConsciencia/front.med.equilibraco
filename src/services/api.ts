@@ -6,10 +6,14 @@ export interface LoginResponse {
 }
 
 export interface MedicoResponse {
-  id: number;
+  id: string;
   email: string;
-  nombre: string;
-  // otros campos según la API
+  nombre_completo: string;
+  tarjeta_profesional: string;
+  telefono: string;
+  especialidad: string;
+  is_active: boolean;
+  created_at: string;
 }
 
 export interface Customer {

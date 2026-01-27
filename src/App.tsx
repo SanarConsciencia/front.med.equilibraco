@@ -3,7 +3,6 @@ import { useEffect } from 'react'
 import { useAppStore } from './stores/appStore'
 import Home from './pages/Home'
 import Customers from './pages/Customers'
-import CustomerDetail from './pages/CustomerDetail'
 import Login from './pages/Login'
 import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
@@ -32,18 +31,10 @@ function App() {
           } />
           <Route path="/customers" element={
             <ProtectedRoute>
-              <Container maxWidth="full" className="py-8">
-                <Customers />
-              </Container>
+              <Customers />
             </ProtectedRoute>
           } />
-          <Route path="/customers/:customer_uuid" element={
-            <ProtectedRoute>
-              <Container maxWidth="full" className="py-8">
-                <CustomerDetail />
-              </Container>
-            </ProtectedRoute>
-          } />
+          
         </Routes>
       </main>
     </div>

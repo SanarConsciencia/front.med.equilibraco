@@ -49,7 +49,7 @@ const Navbar: React.FC = () => {
                 </svg>
               </div>
               <span className="text-sm font-medium text-gray-700">
-                {user?.nombre}
+                {user?.nombre_completo}
               </span>
             </div>
 
@@ -112,7 +112,7 @@ const Navbar: React.FC = () => {
                   </div>
                 </div>
                 <div className="ml-3">
-                  <div className="text-base font-medium text-gray-800">{user?.nombre}</div>
+                  <div className="text-base font-medium text-gray-800">{user?.nombre_completo}</div>
                   <div className="text-sm font-medium text-gray-500">{user?.email}</div>
                 </div>
               </div>
