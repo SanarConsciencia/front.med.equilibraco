@@ -2,25 +2,26 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAppStore } from '../stores/appStore'
 import { Button, Container } from '../components/ui'
+import { ThemeToggle } from './ThemeToggle'
+import { useUiStore } from '../stores/uiStore'
 
 const Navbar: React.FC = () => {
   const { isAuthenticated, user, logout } = useAppStore()
+  const showNavbar = useUiStore((s) => s.showNavbar)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-  if (!isAuthenticated) return null
+  if (!isAuthenticated || !showNavbar) return null
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200">
+    <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
       <Container maxWidth="full" className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
-              <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
-                <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
+              <div className="flex-shrink-0 mr-3">
+                <img src="/DrKiwiLogo.svg" alt="DrKiwi" className="h-10 w-10" />
               </div>
-              <h1 className="text-xl font-bold text-gray-900">KiWi Médica</h1>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">KiWi Médica</h1>
             </div>
           </div>
 
@@ -28,13 +29,13 @@ const Navbar: React.FC = () => {
           <div className="hidden md:flex items-center space-x-8">
             <Link
               to="/"
-              className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+              className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 text-sm font-medium transition-colors"
             >
               Inicio
             </Link>
             <Link
               to="/customers"
-              className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+              className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 text-sm font-medium transition-colors"
             >
               Customers
             </Link>
@@ -42,13 +43,14 @@ const Navbar: React.FC = () => {
 
           {/* Desktop User Menu */}
           <div className="hidden md:flex items-center space-x-4">
+            <ThemeToggle />
             <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 bg-gray-300 rounded-full flex items-center justify-center">
-                <svg className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="h-8 w-8 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                <svg className="h-4 w-4 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
-              <span className="text-sm font-medium text-gray-700">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 {user?.nombre_completo}
               </span>
             </div>
@@ -57,7 +59,7 @@ const Navbar: React.FC = () => {
               variant="outline"
               size="sm"
               onClick={logout}
-              className="text-gray-700 border-gray-300 hover:bg-gray-50"
+              className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

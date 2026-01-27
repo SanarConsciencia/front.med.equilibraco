@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui'
 import { useAppStore } from '../stores/appStore'
 import { useCompliance } from '../hooks/useCompliance'
 import { api } from '../services/api'
 import type { Customer } from '../services/api'
 import { formatDateColombian } from '../utils/date'
+import AnalysisModal from '../components/AnalysisModal'
 
 const Customers: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([])
@@ -16,6 +18,7 @@ const Customers: React.FC = () => {
   const [endDate, setEndDate] = useState('')
   
   const { token, user } = useAppStore()
+  const navigate = useNavigate()
   const { loadCompliance, isLoading: complianceLoading } = useCompliance()
 
   useEffect(() => {
@@ -41,15 +44,21 @@ const Customers: React.FC = () => {
     fetchCustomers()
   }, [token])
 
+  const formatDateInColombia = (d: Date) => {
+    // Use Intl.DateTimeFormat with a locale that outputs YYYY-MM-DD (en-CA)
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d)
+  }
+
   const handleAnalyzePeriod = () => {
     setIsModalOpen(true)
-    // Establecer fechas por defecto (últimos 30 días)
+
+    // Establecer fechas por defecto: última semana (7 días incluyendo hoy) en zona Colombia
     const today = new Date()
-    const thirtyDaysAgo = new Date(today)
-    thirtyDaysAgo.setDate(today.getDate() - 30)
-    
-    setEndDate(today.toISOString().split('T')[0])
-    setStartDate(thirtyDaysAgo.toISOString().split('T')[0])
+    const start = new Date(today)
+    start.setDate(today.getDate() - 6) // última semana incluyendo hoy => 7 días (hoy y 6 días atrás)
+
+    setEndDate(formatDateInColombia(today))
+    setStartDate(formatDateInColombia(start))
   }
 
   const handleSubmitAnalysis = async () => {
@@ -67,7 +76,14 @@ const Customers: React.FC = () => {
 
     if (success) {
       setIsModalOpen(false)
-      alert('Análisis completado exitosamente')
+      navigate('/period-customer', {
+        state: {
+          doctor_uuid: user.id,
+          customer_id: selectedCustomer.customer_uuid,
+          start_date: startDate,
+          end_date: endDate,
+        },
+      })
     } else {
       alert('Error al analizar el periodo')
     }
@@ -75,23 +91,23 @@ const Customers: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex justify-center items-center h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div className="flex justify-center items-center h-screen bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
-          <div className="text-red-600 mb-4">
+          <div className="text-red-600 dark:text-red-400 mb-4">
             <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Error al cargar customers</h3>
-          <p className="text-gray-600">{error}</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Error al cargar customers</h3>
+          <p className="text-gray-600 dark:text-gray-400">{error}</p>
           <Button onClick={() => window.location.reload()} className="mt-4">
             Reintentar
           </Button>
@@ -101,11 +117,11 @@ const Customers: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100vh - 64px)' }}>
+    <div className="flex flex-col bg-gray-50 dark:bg-gray-900" style={{ height: 'calc(100vh - 64px)' }}>
       {/* Contenedor principal con sidebar y panel de detalles */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar izquierdo con lista de customers */}
-        <div className="w-80 bg-gray-50 border-r border-gray-200 overflow-y-auto">
+        <div className="w-80 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
           <div className="p-4">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Customers</h2>
             {customers.length === 0 ? (
@@ -250,75 +266,17 @@ const Customers: React.FC = () => {
       </div>
 
       {/* Modal para análisis de periodo */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-gray-900">Analizar Periodo</h3>
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Customer</label>
-                  <p className="text-gray-900 bg-gray-50 p-2 rounded">{selectedCustomer?.customer_full_name}</p>
-                </div>
-
-                <div>
-                  <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
-                    Fecha de Inicio
-                  </label>
-                  <input
-                    type="date"
-                    id="startDate"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
-                    Fecha de Fin
-                  </label>
-                  <input
-                    type="date"
-                    id="endDate"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="flex space-x-3 mt-6">
-                <Button
-                  onClick={() => setIsModalOpen(false)}
-                  variant="secondary"
-                  className="flex-1"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={handleSubmitAnalysis}
-                  disabled={complianceLoading}
-                  className="flex-1"
-                >
-                  {complianceLoading ? 'Analizando...' : 'Analizar'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnalysisModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        selectedCustomer={selectedCustomer}
+        startDate={startDate}
+        endDate={endDate}
+        setStartDate={setStartDate}
+        setEndDate={setEndDate}
+        onSubmit={handleSubmitAnalysis}
+        loading={complianceLoading}
+      />
     </div>
   )
 }

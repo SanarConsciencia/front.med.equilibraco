@@ -26,21 +26,19 @@ const Login: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <Container maxWidth="sm" className="w-full">
         <div className="text-center mb-8">
-          <div className="mx-auto h-12 w-12 bg-blue-600 rounded-full flex items-center justify-center mb-4">
-            <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
+          <div className="mx-auto h-64 w-64 bg-transparent rounded-full flex items-center justify-center">
+            <img src="/DrKiwiLogo.svg" alt="DrKiwi" className="h-64 w-64" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900">KiWi Médica</h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">KiWi Médica</h2>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             Accede a tu panel médico
           </p>
         </div>
 
-        <Card className="shadow-xl">
+        <Card className="shadow-xl dark:bg-gray-800 dark:border-gray-700">
           <form onSubmit={handleSubmit} className="space-y-6">
             <Input
               label="Usuario"
