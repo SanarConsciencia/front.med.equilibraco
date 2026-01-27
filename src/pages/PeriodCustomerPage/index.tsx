@@ -22,6 +22,7 @@ const PeriodCustomerPage: React.FC = () => {
   const [leftSidebarExpanded, setLeftSidebarExpanded] = useState(true)
   const [rightSidebarExpanded, setRightSidebarExpanded] = useState(false)
   const [activeView, setActiveView] = useState<ViewType>('overview')
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null)
   const [notes, setNotes] = useState('')
 
   // Notes resizer state
@@ -114,7 +115,12 @@ const PeriodCustomerPage: React.FC = () => {
               <ExplorerPanel
                 activeView={activeView}
                 complianceData={complianceData}
-                onViewChange={setActiveView}
+                onViewChange={(view, dayIndex) => {
+                  setActiveView(view)
+                  if (dayIndex !== undefined) {
+                    setSelectedDayIndex(dayIndex)
+                  }
+                }}
               />
             )}
 
@@ -122,7 +128,7 @@ const PeriodCustomerPage: React.FC = () => {
             <div className="flex-1 flex flex-col">
               {/* DataView - Top Section */}
               <div className="flex-1 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 overflow-y-auto p-4">
-                <DataView activeView={activeView} complianceData={complianceData} />
+                <DataView activeView={activeView} complianceData={complianceData} selectedDayIndex={selectedDayIndex} />
               </div>
 
               {/* Resizer */}
