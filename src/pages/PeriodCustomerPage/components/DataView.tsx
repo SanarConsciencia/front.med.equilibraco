@@ -60,7 +60,7 @@ export const DataView: React.FC<DataViewProps> = ({ tabs, activeTabId, complianc
 
     case 'day-detail':
       if (activeTab.dayIndex !== null && activeTab.dayIndex !== undefined && complianceData.days[activeTab.dayIndex]) {
-        viewElement = <DayDetailView dayData={complianceData.days[activeTab.dayIndex]} />
+        viewElement = <DayDetailView dayData={complianceData.days[activeTab.dayIndex]} customerFullName={complianceData.customer_info.customer_full_name} />
       } else {
         viewElement = <PlaceholderView title="Día no encontrado" />
       }

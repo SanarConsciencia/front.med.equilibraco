@@ -1,15 +1,21 @@
 import React from 'react'
 import type { DayAnalysisResponse } from '../../../types/medicalApiTypes'
-import { DayHeader } from './day/Header' 
+import { DayHeader } from './day/Header'
+import { ComplianceChart } from './day/ComplianceChart' 
 
 interface DayDetailViewProps {
   dayData: DayAnalysisResponse
+  customerFullName?: string
 }
 
-export const DayDetailView: React.FC<DayDetailViewProps> = ({ dayData }) => {
+export const DayDetailView: React.FC<DayDetailViewProps> = ({ dayData, customerFullName }) => {
   return (
     <div className="space-y-6 px-4 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200">
       <DayHeader dayData={dayData} />
+      
+      {/* Compliance Chart */}
+      <ComplianceChart dayData={dayData} customerFullName={customerFullName} />
+
 
       {/* Platos del día */}
       <div>
@@ -85,6 +91,7 @@ export const DayDetailView: React.FC<DayDetailViewProps> = ({ dayData }) => {
         </div>
       </div>
 
+      
       {/* Inflammatory Analysis */}
       <div>
         <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Análisis Inflamatorio</h3>
