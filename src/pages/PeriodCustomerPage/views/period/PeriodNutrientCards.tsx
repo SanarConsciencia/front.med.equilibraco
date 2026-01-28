@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { LineChart, Line, ResponsiveContainer, YAxis, ReferenceLine } from 'recharts'
-import type { NutrientTrendData } from '../../../types/medicalApiTypes'
+import type { NutrientTrendData } from '../../../../types/medicalApiTypes'
 
 interface NutrientCardProps {
   boxplot: any

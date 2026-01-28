@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react'
-import { PeriodNutrientTrendsChart } from './period/PeriodNutrientTrendsChart'
+import { PeriodNutrientTrendsChart } from './PeriodNutrientTrendsChart'
 import { PeriodNutrientCards } from './PeriodNutrientCards'
-import type { BulkComplianceResponse } from '../../../types/medicalApiTypes'
+import type { BulkComplianceResponse } from '../../../../types/medicalApiTypes'
 
 interface PeriodNutrientTrendsViewProps {
   complianceData: BulkComplianceResponse

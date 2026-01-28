@@ -25,10 +25,6 @@ export const DayDetailView: React.FC<DayDetailViewProps> = ({ dayData, customerF
       {/* Day Meals */}
       <DayMeals dayData={dayData} customerFullName={customerFullName} />
       
-      
-      
-      
-
       <TrackingInfo dayData={dayData} customerFullName={customerFullName} />
     </div>
   )

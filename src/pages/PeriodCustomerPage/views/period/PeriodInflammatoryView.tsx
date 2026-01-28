@@ -1,6 +1,5 @@
 import React from 'react'
 import {
-  LineChart,
   Line,
   XAxis,
   YAxis,
@@ -12,7 +11,7 @@ import {
   Area,
   ComposedChart,
 } from 'recharts'
-import type { BulkComplianceResponse } from '../../../types/medicalApiTypes'
+import type { BulkComplianceResponse } from '../../../../types/medicalApiTypes'
 
 interface PeriodInflammatoryViewProps {
   complianceData: BulkComplianceResponse

@@ -3,13 +3,11 @@ import type { Tab } from '../types'
 import type { BulkComplianceResponse } from '../../../types/medicalApiTypes'
 import { TabBar } from './TabBar'
 import { OverviewView } from '../views/OverviewView'
-import { DaysView } from '../views/DaysView'
-import { PeriodSummaryView } from '../views/PeriodSummaryView'
 import { DayDetailView } from '../views/DayDetailView'
 import { PeriodTrackingView } from '../views/PeriodTrackingView'
-import { PeriodNutrientVarietyView } from '../views/PeriodNutrientVarietyView'
-import { PeriodInflammatoryView } from '../views/PeriodInflammatoryView'
-import { PeriodNutrientTrendsView } from '../views/PeriodNutrientTrendsView'
+import { PeriodNutrientVarietyView } from '../views/period/PeriodNutrientVarietyView'
+import { PeriodInflammatoryView } from '../views/period/PeriodInflammatoryView'
+import { PeriodNutrientTrendsView } from '../views/period/PeriodNutrientTrendsView'
 import { PeriodMealAnalysisView } from '../views/PeriodMealAnalysisView'
 import { PeriodHealthMonitoringView } from '../views/PeriodHealthMonitoringView'
 import { PeriodIngredientConsumptionView } from '../views/period/PeriodIngredientConsumptionView'
@@ -49,15 +47,7 @@ export const DataView: React.FC<DataViewProps> = ({ tabs, activeTabId, complianc
     case 'overview':
       viewElement = <OverviewView complianceData={complianceData} />
       break
-
-    case 'period-summary':
-      viewElement = <PeriodSummaryView complianceData={complianceData} />
-      break
-
-    case 'days':
-      viewElement = <DaysView complianceData={complianceData} />
-      break
-
+    
     case 'day-detail':
       if (activeTab.dayIndex !== null && activeTab.dayIndex !== undefined && complianceData.days[activeTab.dayIndex]) {
         viewElement = <DayDetailView dayData={complianceData.days[activeTab.dayIndex]} customerFullName={complianceData.customer_info.customer_full_name} />
@@ -66,26 +56,7 @@ export const DataView: React.FC<DataViewProps> = ({ tabs, activeTabId, complianc
       }
       break
 
-    case 'inflammatory':
-      viewElement = <PlaceholderView title="Inflamatorio" />
-      break
-
-    case 'nutrient-trends':
-      viewElement = <PlaceholderView title="Tendencias de nutrientes" />
-      break
-
-    case 'meal-analysis':
-      viewElement = <PlaceholderView title="Análisis de comidas" />
-      break
-
-    case 'tracking':
-      viewElement = <PlaceholderView title="Seguimiento" />
-      break
-
-    case 'health-monitoring':
-      viewElement = <PlaceholderView title="Monitoreo de salud" />
-      break
-
+    
     // Period Summary Detail Views
     case 'period-tracking':
       viewElement = <PeriodTrackingView complianceData={complianceData} />
