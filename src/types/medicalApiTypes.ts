@@ -824,8 +824,8 @@ export interface InflammatorySummary {
   neutral_days: number;
   trend: string;
   trend_description: string;
-  dii_chart_data: DiiChartDataPoint[];
-  recommendations: string[];
+  chart_data: DiiChartDataPoint[];
+  recommendation: string;
 }
 
 // Nutrient Trends interfaces
