@@ -12,7 +12,7 @@ import { PeriodInflammatoryView } from '../views/PeriodInflammatoryView'
 import { PeriodNutrientTrendsView } from '../views/PeriodNutrientTrendsView'
 import { PeriodMealAnalysisView } from '../views/PeriodMealAnalysisView'
 import { PeriodHealthMonitoringView } from '../views/PeriodHealthMonitoringView'
-import { PeriodIngredientConsumptionView } from '../views/PeriodIngredientConsumptionView'
+import { PeriodIngredientConsumptionView } from '../views/period/PeriodIngredientConsumptionView'
 import { PlaceholderView } from '../views/PlaceholderView'
 
 interface DataViewProps {

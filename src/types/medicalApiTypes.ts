@@ -978,6 +978,13 @@ export interface IngredientConsumption {
   category_breakdown: CategoryTotal[];
   usage_intensity_groups: UsageIntensityGroup[];
   top_ingredients: IngredientDetail[];
+  top_50_ingredients: IngredientDetail[];
+  by_category: Record<string, IngredientDetail[]>;
+  category_totals: Record<string, CategoryTotal>;
+  healthy_ingredients: IngredientDetail[];
+  processed_ingredients: IngredientDetail[];
+  usage_intensity: Record<string, any>;
+  shopping_recommendations: string[];
   recommendation: string;
   message?: string | null;
 }
