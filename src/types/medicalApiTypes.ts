@@ -830,10 +830,15 @@ export interface InflammatorySummary {
 
 // Nutrient Trends interfaces
 export interface BoxplotData {
-  nutrient?: string | null;
-  nutrient_key?: string | null;
-  average?: number | null;
-  status?: string | null;
+  min: number;
+  q1: number;
+  median: number;
+  q3: number;
+  max: number;
+  nutrient: string;
+  nutrient_key: string;
+  average: number;
+  status: string;
 }
 
 export interface FoodSource {
@@ -857,7 +862,10 @@ export interface NutrientTrendData {
 }
 
 export interface NutrientTrends {
-  nutrients: NutrientTrendData[];
+  by_nutrient: Record<string, NutrientTrendData>;
+  boxplot_data: BoxplotData[];
+  low_nutrients: string[];
+  high_nutrients: string[];
   summary: string;
   low_compliance_count: number;
   high_compliance_count: number;

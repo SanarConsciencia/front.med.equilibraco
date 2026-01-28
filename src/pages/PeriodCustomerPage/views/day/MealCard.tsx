@@ -8,8 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
-  Cell,
-} from 'recharts' 
+} from 'recharts'
 
 interface MealCardProps {
   meal: any
@@ -38,6 +37,8 @@ const COMPLIANCE_NUTRIENTS = [
   { key: 'starches_g', label: 'Almidón', category: 'carb' },
   { key: 'sugars_g', label: 'Azúcar', category: 'carb' },
   { key: 'fiber_g', label: 'Fibra', category: 'fiber' },
+  { key: 'fiber_insoluble_g', label: 'Fibra Insoluble', category: 'fiber' },
+  { key: 'fiber_soluble_g', label: 'Fibra Soluble', category: 'fiber' },
   { key: 'fats_g', label: 'Grasas', category: 'fat' },
   { key: 'sfa_g', label: 'Saturadas', category: 'fat' },
   { key: 'mufa_g', label: 'MUFA', category: 'fat' },
@@ -139,6 +140,13 @@ export const MealCard: React.FC<MealCardProps> = ({
         </p>
       </div>
     )
+  }
+
+  // Custom bar shape to color each bar based on its payload.category (replaces deprecated Cell usage)
+  const renderBarShape = (props: any) => {
+    const { x, y, width, height, payload } = props
+    const fill = CATEGORY_COLORS[payload?.category] || '#6b7280'
+    return <rect x={x} y={y} width={width} height={height} fill={fill} rx={4} />
   }
 
   return (
@@ -321,11 +329,7 @@ export const MealCard: React.FC<MealCardProps> = ({
                   stroke="#6b7280"
                   strokeDasharray="3 3"
                 />
-                <Bar dataKey="scaled" radius={[4, 4, 0, 0]}>
-                  {complianceChartData.map((entry, i) => (
-                    <Cell key={`cell-${i}`} fill={CATEGORY_COLORS[entry.category] || '#6b7280'} />
-                  ))}
-                </Bar>
+                <Bar dataKey="scaled" radius={[4, 4, 0, 0]} shape={renderBarShape} />
               </BarChart>
             </ResponsiveContainer>
           </div>

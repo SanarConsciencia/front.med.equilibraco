@@ -1,4 +1,6 @@
-import React from 'react'
+import React, { useState, useMemo } from 'react'
+import { PeriodNutrientTrendsChart } from './period/PeriodNutrientTrendsChart'
+import { PeriodNutrientCards } from './PeriodNutrientCards'
 import type { BulkComplianceResponse } from '../../../types/medicalApiTypes'
 
 interface PeriodNutrientTrendsViewProps {
@@ -7,136 +9,225 @@ interface PeriodNutrientTrendsViewProps {
 
 export const PeriodNutrientTrendsView: React.FC<PeriodNutrientTrendsViewProps> = ({ complianceData }) => {
   const trends = complianceData.period_summary.analysis.nutrient_trends
-  const nutrients = trends.nutrients ?? []
+  const boxplotData = trends.boxplot_data ?? []
+  const byNutrient = trends.by_nutrient ?? {}
   const summary = trends.summary ?? ''
+  const lowNutrients = trends.low_nutrients ?? []
+  const highNutrients = trends.high_nutrients ?? []
+  const optimalNutrients = Object.keys(byNutrient).filter(key => {
+    const nutrient = byNutrient[key]
+    return nutrient.status && (nutrient.status.toLowerCase().includes('óptimo') || nutrient.status.toLowerCase().includes('adecuado'))
+  })
+  
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'low' | 'high' | 'optimal' | 'variable'>('all')
+
+  // Gráfico fijo de 0 a 200%
+  const chartMinValue = 0
+  const chartMaxValue = 200
+
+  // Preparar datos filtrados para el gráfico
+  const filteredBoxplotData = boxplotData.filter(item => {
+    if (selectedCategory === 'all') return true
+    if (selectedCategory === 'low') return lowNutrients.includes(item.nutrient)
+    if (selectedCategory === 'high') return highNutrients.includes(item.nutrient)
+    if (selectedCategory === 'optimal') return optimalNutrients.includes(item.nutrient_key)
+    if (selectedCategory === 'variable') return item.status.toLowerCase().includes('variable')
+    return true
+  }).map(item => ({
+    ...item,
+    // Agregar un valor de referencia fijo para que Recharts calcule correctamente el área de ploteo
+    _chartRef: chartMaxValue
+  }))
+
+  // Procesar datos diarios de compliance por nutriente para gráficos de tendencia
+  const nutrientDailyData = useMemo(() => {
+    const days = complianceData.days || []
+    const nutrientMap: Record<string, Array<{ date: string; value: number }>> = {}
+
+    // Iterar sobre cada día y extraer compliance de cada nutriente
+    days.forEach(day => {
+      const dateStr = day.day.date
+      const totalCompliance = (day.compliance?.total as unknown) as Record<string, number> || {}
+
+      // Extraer todos los nutrientes que tienen datos
+      Object.keys(totalCompliance).forEach(nutrientKey => {
+        const value = totalCompliance[nutrientKey]
+        if (typeof value === 'number') {
+          if (!nutrientMap[nutrientKey]) {
+            nutrientMap[nutrientKey] = []
+          }
+          nutrientMap[nutrientKey].push({ date: dateStr, value })
+        }
+      })
+    })
+
+    return nutrientMap
+  }, [complianceData.days])
 
   const getStatusColor = (status: string) => {
     const lower = (status || '').toLowerCase()
     if (lower.includes('bajo') || lower.includes('deficiente')) {
-      return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700'
+      return '#EF4444'
     }
     if (lower.includes('alto') || lower.includes('exceso')) {
-      return 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-700'
+      return '#F97316'
     }
     if (lower.includes('óptimo') || lower.includes('adecuado')) {
-      return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700'
+      return '#10B981'
     }
-    return 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700'
+    return '#F59E0B'
+  }
+
+  const getStatusBgColor = (status: string) => {
+    const lower = (status || '').toLowerCase()
+    if (lower.includes('bajo') || lower.includes('deficiente')) {
+      return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700'
+    }
+    if (lower.includes('alto') || lower.includes('exceso')) {
+      return 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700'
+    }
+    return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700'
+  }
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length > 0) {
+      const data = payload[0].payload
+      const nutrientKey = data.nutrient_key
+      const nutrientData = byNutrient[nutrientKey]
+
+      return (
+        <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 shadow-lg max-w-md">
+          <h4 className="text-white font-semibold mb-2">{data.nutrient}</h4>
+          <div className="space-y-1 text-sm">
+            <p className="text-gray-300">Promedio: <span className="font-semibold text-white">{data.average.toFixed(1)}%</span></p>
+            <p className="text-gray-400 text-xs">
+              Min: {data.min.toFixed(1)}% | Q1: {data.q1.toFixed(1)}% | Med: {data.median.toFixed(1)}% | Q3: {data.q3.toFixed(1)}% | Max: {data.max.toFixed(1)}%
+            </p>
+            <p className="text-gray-300">Estado: <span className={`font-semibold`} style={{ color: getStatusColor(data.status) }}>{data.status}</span></p>
+            {nutrientData && nutrientData.recommendation && (
+              <div className="mt-2 pt-2 border-t border-gray-700">
+                <p className="text-blue-300 text-xs">💡 {nutrientData.recommendation}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )
+    }
+    return null
   }
 
   return (
-    <div className="space-y-6 p-4 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200">
-      <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Tendencias de Nutrientes</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summary}</p>
+    <div className="w-full bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Tendencias de nutrientes
+        </h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{summary}</p>
       </div>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 text-center">
-          <span className="text-3xl mb-2 block">⚠️</span>
-          <p className="text-2xl font-bold text-red-600 dark:text-red-400">{trends.low_compliance_count ?? 0}</p>
-          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Nutrientes con compliance bajo</p>
-        </div>
-
-        <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 text-center">
-          <span className="text-3xl mb-2 block">📊</span>
-          <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{trends.high_compliance_count ?? 0}</p>
-          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Nutrientes con compliance alto</p>
-        </div>
-      </div>
-
-      {/* Nutrients List */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Análisis por Nutriente</h3>
-        {nutrients.length > 0 ? nutrients.map((nutrient, idx) => (
-          <div
-            key={idx}
-            className={`border rounded-lg p-4 ${getStatusColor(nutrient.status ?? '')}`}
-          >
-            <div className="flex items-start justify-between mb-3">
+      <div className="p-6 space-y-6">
+        {/* Stats principales */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/20 rounded-xl p-6 border border-red-200 dark:border-red-800">
+            <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-semibold text-base mb-1">
-                  {typeof nutrient.average_compliance === 'number' && nutrient.average_compliance >= 0 ? '✓' : '✗'} Nutriente #{idx + 1}
-                </h4>
-                <span className={`text-xs px-2 py-1 rounded font-medium ${
-                  (nutrient.status ?? '').toLowerCase().includes('bajo') ? 'bg-red-200 dark:bg-red-800' :
-                  (nutrient.status ?? '').toLowerCase().includes('alto') ? 'bg-orange-200 dark:bg-orange-800' :
-                  'bg-green-200 dark:bg-green-800'
-                }`}>
-                  {nutrient.status ?? '—'}
-                </span>
+                <p className="text-sm font-medium text-red-700 dark:text-red-300 mb-1">
+                  Con deficiencia
+                </p>
+                <p className="text-4xl font-bold text-red-900 dark:text-red-100">
+                  {lowNutrients.length}
+                </p>
+                <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+                  {lowNutrients.slice(0, 2).join(', ')}
+                  {lowNutrients.length > 2 && `... +${lowNutrients.length - 2}`}
+                </p>
               </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold">{typeof nutrient.average_compliance === 'number' ? `${nutrient.average_compliance.toFixed(1)}%` : 'N/A'}</p>
-                <p className="text-xs opacity-75">Promedio</p>
-              </div>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
-              <div className="bg-white/50 dark:bg-black/20 rounded p-2">
-                <p className="text-xs opacity-75 mb-1">Mínimo</p>
-                <p className="text-sm font-semibold">{typeof nutrient.min_compliance === 'number' ? `${nutrient.min_compliance.toFixed(1)}%` : 'N/A'}</p>
-              </div>
-              <div className="bg-white/50 dark:bg-black/20 rounded p-2">
-                <p className="text-xs opacity-75 mb-1">Q1</p>
-                <p className="text-sm font-semibold">{typeof nutrient.q1 === 'number' ? `${nutrient.q1.toFixed(1)}%` : 'N/A'}</p>
-              </div>
-              <div className="bg-white/50 dark:bg-black/20 rounded p-2">
-                <p className="text-xs opacity-75 mb-1">Mediana</p>
-                <p className="text-sm font-semibold">{typeof nutrient.median === 'number' ? `${nutrient.median.toFixed(1)}%` : 'N/A'}</p>
-              </div>
-              <div className="bg-white/50 dark:bg-black/20 rounded p-2">
-                <p className="text-xs opacity-75 mb-1">Q3</p>
-                <p className="text-sm font-semibold">{typeof nutrient.q3 === 'number' ? `${nutrient.q3.toFixed(1)}%` : 'N/A'}</p>
-              </div>
-              <div className="bg-white/50 dark:bg-black/20 rounded p-2">
-                <p className="text-xs opacity-75 mb-1">Máximo</p>
-                <p className="text-sm font-semibold">{typeof nutrient.max_compliance === 'number' ? `${nutrient.max_compliance.toFixed(1)}%` : 'N/A'}</p>
-              </div>
-            </div>
-
-            {/* Issues */}
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              <div className="bg-white/50 dark:bg-black/20 rounded p-2">
-                <p className="text-xs opacity-75 mb-1">Días &lt; 70%</p>
-                <p className="text-sm font-semibold text-red-600 dark:text-red-400">{typeof nutrient.days_below_70 === 'number' ? nutrient.days_below_70 : 'N/A'}</p>
-              </div>
-              <div className="bg-white/50 dark:bg-black/20 rounded p-2">
-                <p className="text-xs opacity-75 mb-1">Días &gt; 120%</p>
-                <p className="text-sm font-semibold text-orange-600 dark:text-orange-400">{typeof nutrient.days_above_120 === 'number' ? nutrient.days_above_120 : 'N/A'}</p>
-              </div>
-            </div>
-
-            {/* Top Food Sources */}
-            {(nutrient.top_food_sources ?? []).length > 0 ? (
-              <div className="mb-3">
-                <p className="text-xs font-semibold mb-2 opacity-75">Principales Fuentes:</p>
-                <div className="flex flex-wrap gap-2">
-                  {(nutrient.top_food_sources ?? []).slice(0, 5).map((source, sidx) => (
-                    <span
-                      key={sidx}
-                      className="text-xs bg-white/70 dark:bg-black/30 px-2 py-1 rounded"
-                    >
-                      {source.food_name} ({typeof source.contribution === 'number' ? source.contribution.toFixed(0) : 'N/A'}%)
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            {/* Recommendation */}
-            <div className="bg-white/50 dark:bg-black/20 rounded p-3">
-              <p className="text-xs font-medium flex items-start">
-                <span className="mr-1">💡</span>
-                <span>{nutrient.recommendation ?? '—'}</span>
-              </p>
+              <div className="text-4xl">⚠️</div>
             </div>
           </div>
-        )) : (
-          <div className="text-sm text-gray-600 dark:text-gray-400 p-4">No hay datos de nutrientes</div>
+
+          <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/20 rounded-xl p-6 border border-orange-200 dark:border-orange-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-orange-700 dark:text-orange-300 mb-1">
+                  Con exceso
+                </p>
+                <p className="text-4xl font-bold text-orange-900 dark:text-orange-100">
+                  {highNutrients.length}
+                </p>
+                <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">
+                  {highNutrients.length > 0 ? highNutrients.join(', ') : 'Ninguno'}
+                </p>
+              </div>
+              <div className="text-4xl">📈</div>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/20 rounded-xl p-6 border border-green-200 dark:border-green-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-green-700 dark:text-green-300 mb-1">
+                  Óptimos
+                </p>
+                <p className="text-4xl font-bold text-green-900 dark:text-green-100">
+                  {optimalNutrients.length}
+                </p>
+                <p className="text-xs text-green-600 dark:text-green-400 mt-2">
+                  Bien balanceados
+                </p>
+              </div>
+              <div className="text-4xl">✅</div>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">
+                  Total analizados
+                </p>
+                <p className="text-4xl font-bold text-blue-900 dark:text-blue-100">
+                  {boxplotData.length}
+                </p>
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                  Nutrientes evaluados
+                </p>
+              </div>
+              <div className="text-4xl">🎯</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Gráfico de distribución */}
+        {filteredBoxplotData.length > 0 ? (
+          <PeriodNutrientTrendsChart
+            boxplotData={filteredBoxplotData}
+            chartMinValue={chartMinValue}
+            chartMaxValue={chartMaxValue}
+            getStatusColor={getStatusColor}
+            CustomTooltip={CustomTooltip}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            allBoxplotData={boxplotData}
+            lowNutrients={lowNutrients}
+            highNutrients={highNutrients}
+            optimalNutrients={optimalNutrients}
+          />
+        ) : (
+          <div className="h-64 flex items-center justify-center text-gray-500 dark:text-gray-400">
+            No hay datos disponibles para esta categoría
+          </div>
         )}
+
+        {/* Cards de nutrientes - Grid compacto */}
+        <PeriodNutrientCards
+          filteredBoxplotData={filteredBoxplotData}
+          byNutrient={byNutrient}
+          nutrientDailyData={nutrientDailyData}
+          getStatusColor={getStatusColor}
+          getStatusBgColor={getStatusBgColor}
+        />
       </div>
     </div>
   )
