@@ -130,7 +130,7 @@ export const DataView: React.FC<DataViewProps> = ({ tabs, activeTabId, complianc
       />
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200">
         {viewElement}
       </div>
     </div>
