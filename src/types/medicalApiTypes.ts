@@ -1,6 +1,8 @@
 // Types para Medical Access API
 // Equivalentes TypeScript de los schemas Pydantic de Python
 
+import type { MealAnalysisBySlot } from "./mealAnalysisBySlotTypes";
+
 // ═══════════════════════════════════════════════════════════
 // NUTRITIONAL PROPERTIES
 // ═══════════════════════════════════════════════════════════
@@ -877,33 +879,6 @@ export interface MealBalanceScore {
   rating: string;
 }
 
-export interface TopMeal {
-  meal_name: string;
-  frequency: number;
-  avg_calories: number;
-  avg_proteins_g?: number | null;
-  avg_carbs_g?: number | null;
-  avg_fats_g?: number | null;
-  avg_fiber_g?: number | null;
-  avg_dii?: number | null;
-  balance_score: number;
-  balance_classification: string;
-  imbalance_issues: string[];
-  has_bioactives: boolean;
-  bioactives_pct: number;
-  top_ingredients: Array<{food: string; count: number}>;
-}
-
-export interface MealAnalysis {
-  unique_meals_count: number;
-  total_meal_instances: number;
-  avg_balance_score: number;
-  bioactives_percentage: number;
-  top_meals: TopMeal[];
-  recommendation: string;
-  message?: string | null;
-}
-
 // Health Monitoring interfaces
 export interface SymptomFrequency {
   symptom_name: string;
@@ -1009,7 +984,7 @@ export interface PeriodAnalysisData {
   nutrient_variety: NutrientVariety;
   inflammatory_summary: InflammatorySummary;
   nutrient_trends: NutrientTrends;
-  meal_analysis: MealAnalysis;
+  meal_analysis: MealAnalysisBySlot;
   health_monitoring: HealthMonitoring;
   ingredient_consumption: IngredientConsumption;
 }
