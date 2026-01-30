@@ -10,7 +10,7 @@ interface ExplorerPanelProps {
 }
 
 interface NavItem {
-  id: ViewType
+  id: string
   icon: string
   label: string
   count?: number
@@ -23,6 +23,11 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
   onTabOpen
 }) => {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
+
+  // Helper to check if a view type is active in any tab
+  const isViewActive = (viewType: string) => {
+    return tabs.some(tab => tab.id === activeTabId && tab.viewType === (viewType as ViewType))
+  }
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev => {
@@ -55,11 +60,6 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
   const isDaysExpanded = expandedSections.has('days')
   const isPeriodSummaryExpanded = expandedSections.has('period-summary')
 
-  // Helper to check if a view type is active in any tab
-  const isViewActive = (viewType: ViewType) => {
-    return tabs.some(tab => tab.id === activeTabId && tab.viewType === viewType)
-  }
-
   return (
     <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto text-gray-700 dark:text-gray-200">
       <div className="p-3">
@@ -72,7 +72,7 @@ export const ExplorerPanel: React.FC<ExplorerPanelProps> = ({
                   if (item.id === 'days' || item.id === 'period-summary') {
                     toggleSection(item.id)
                   } else {
-                    onTabOpen(item.id)
+                    onTabOpen(item.id as ViewType)
                   }
                 }}
                 className={`w-full text-left px-3 py-2 rounded text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-600 flex items-center justify-between ${

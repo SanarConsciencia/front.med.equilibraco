@@ -2,6 +2,8 @@
 
 export type ViewType = 
   | 'overview'
+  | 'days'
+  | 'period-summary'
   | 'day-detail'
   | 'period-tracking'
   | 'period-nutrient-variety'

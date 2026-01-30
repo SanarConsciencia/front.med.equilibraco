@@ -59,7 +59,7 @@ const PeriodCustomerPage: React.FC = () => {
 
   // Helper function to generate tab label
   const getTabLabel = (viewType: ViewType, dayIndex?: number | null): string => {
-    const labels: Record<ViewType, string> = {
+    const labels: Record<string, string> = {
       'overview': 'Resumen',
       'period-summary': 'Resumen del Período',
       'days': 'Días',

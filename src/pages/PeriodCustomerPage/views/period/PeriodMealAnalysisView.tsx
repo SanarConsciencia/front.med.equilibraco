@@ -13,7 +13,6 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
   Radar,
-  Cell,
 } from 'recharts'
 import type { BulkComplianceResponse } from '../../../../types/medicalApiTypes'
 
@@ -95,9 +94,6 @@ export const PeriodMealAnalysisView: React.FC<PeriodMealAnalysisViewProps> = ({ 
     if (lower.includes('bajo')) return '⚠️'
     return '🍽️'
   }
-
-  // Colores para barras
-  const COLORS = ['#6366F1', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#EF4444']
 
   return (
     <div className="w-full bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
