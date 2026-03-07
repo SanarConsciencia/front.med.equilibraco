@@ -6,6 +6,7 @@ import Home from './pages/Home'
 import Customers from './pages/Customers'
 import PeriodCustomerPage from './pages/PeriodCustomerPage'
 import Login from './pages/Login'
+import Agenda from './pages/Agenda'
 import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
 import { Container } from './components/ui'
@@ -50,6 +51,12 @@ function App() {
           <Route path="/period-customer" element={
             <ProtectedRoute>
               <PeriodCustomerPage />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/agenda" element={
+            <ProtectedRoute>
+              <Agenda />
             </ProtectedRoute>
           } />
 

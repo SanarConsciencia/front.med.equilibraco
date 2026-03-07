@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { useAppStore } from '../stores/appStore'
 import { Button, Container } from '../components/ui'
 import { ThemeToggle } from './ThemeToggle'
@@ -11,6 +11,13 @@ const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   if (!isAuthenticated || !showNavbar) return null
+
+  const linkBase =
+    'px-3 py-2 text-sm font-medium transition-colors'
+  const linkInactive =
+    'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+  const linkActive =
+    'text-green-600 dark:text-green-400 font-semibold'
 
   return (
     <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
@@ -26,19 +33,27 @@ const Navbar: React.FC = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-2">
             <Link
               to="/"
-              className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 text-sm font-medium transition-colors"
+              className={`${linkBase} ${linkInactive}`}
             >
               Inicio
             </Link>
             <Link
               to="/customers"
-              className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 text-sm font-medium transition-colors"
+              className={`${linkBase} ${linkInactive}`}
             >
               Customers
             </Link>
+            <NavLink
+              to="/agenda"
+              className={({ isActive }) =>
+                `${linkBase} ${isActive ? linkActive : linkInactive}`
+              }
+            >
+              Mi agenda
+            </NavLink>
           </div>
 
           {/* Desktop User Menu */}
@@ -88,34 +103,47 @@ const Navbar: React.FC = () => {
         {/* Mobile menu */}
         {isMobileMenuOpen && (
           <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
               <Link
                 to="/"
-                className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium"
+                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 block px-3 py-2 text-base font-medium"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Inicio
               </Link>
               <Link
                 to="/customers"
-                className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium"
+                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 block px-3 py-2 text-base font-medium"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Customers
               </Link>
+              <NavLink
+                to="/agenda"
+                className={({ isActive }) =>
+                  `block px-3 py-2 text-base font-medium transition-colors ${
+                    isActive
+                      ? 'text-green-600 dark:text-green-400 font-semibold'
+                      : 'text-gray-700 dark:text-gray-300 hover:text-blue-600'
+                  }`
+                }
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Mi agenda
+              </NavLink>
             </div>
-            <div className="pt-4 pb-3 border-t border-gray-200">
+            <div className="pt-4 pb-3 border-t border-gray-200 dark:border-gray-700">
               <div className="flex items-center px-5">
                 <div className="flex-shrink-0">
-                  <div className="h-10 w-10 bg-gray-300 rounded-full flex items-center justify-center">
-                    <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="h-10 w-10 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                    <svg className="h-6 w-6 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </div>
                 </div>
                 <div className="ml-3">
-                  <div className="text-base font-medium text-gray-800">{user?.nombre_completo}</div>
-                  <div className="text-sm font-medium text-gray-500">{user?.email}</div>
+                  <div className="text-base font-medium text-gray-800 dark:text-gray-200">{user?.nombre_completo}</div>
+                  <div className="text-sm font-medium text-gray-500 dark:text-gray-400">{user?.email}</div>
                 </div>
               </div>
               <div className="mt-3 px-2">
@@ -126,7 +154,7 @@ const Navbar: React.FC = () => {
                     logout()
                     setIsMobileMenuOpen(false)
                   }}
-                  className="w-full text-gray-700 border-gray-300 hover:bg-gray-50"
+                  className="w-full text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
