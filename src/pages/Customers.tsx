@@ -141,11 +141,17 @@ const Customers: React.FC = () => {
       style={{ height: "calc(100vh - 64px)" }}
     >
       {/* Contenedor principal con sidebar y panel de detalles */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         {/* Sidebar izquierdo con lista de customers */}
-        <div className="w-80 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
-          <div className="p-4">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div
+          className={`
+          fixed inset-y-0 left-0 z-40 w-80 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto transform transition-transform duration-300 lg:relative lg:translate-x-0
+          ${selectedCustomer && !loading ? "-translate-x-full" : "translate-x-0"}
+          ${!selectedCustomer && "translate-x-0"}
+        `}
+        >
+          <div className="p-4 pt-4 lg:pt-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Customers
             </h2>
             {customers.length === 0 ? (
@@ -175,18 +181,20 @@ const Customers: React.FC = () => {
                     onClick={() => setSelectedCustomer(customer)}
                     className={`w-full text-left p-3 rounded-lg transition-colors ${
                       selectedCustomer?.customer_uuid === customer.customer_uuid
-                        ? "bg-blue-100 border-2 border-blue-500"
-                        : "bg-white border border-gray-200 hover:bg-gray-100"
+                        ? "bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-500"
+                        : "bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600"
                     }`}
                   >
                     <div className="flex items-center space-x-3">
                       <div
                         className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                          customer.is_active ? "bg-green-100" : "bg-gray-100"
+                          customer.is_active
+                            ? "bg-green-100 dark:bg-green-900/40"
+                            : "bg-gray-100 dark:bg-gray-800"
                         }`}
                       >
                         <svg
-                          className={`h-6 w-6 ${customer.is_active ? "text-green-600" : "text-gray-400"}`}
+                          className={`h-6 w-6 ${customer.is_active ? "text-green-600 dark:text-green-400" : "text-gray-400 dark:text-gray-500"}`}
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -200,10 +208,10 @@ const Customers: React.FC = () => {
                         </svg>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                           {customer.customer_full_name}
                         </p>
-                        <p className="text-xs text-gray-500 truncate">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                           {customer.customer_email}
                         </p>
                       </div>
@@ -219,17 +227,38 @@ const Customers: React.FC = () => {
         </div>
 
         {/* Panel derecho con detalles del customer seleccionado */}
-        <div className="flex-1 overflow-y-auto bg-white">
+        <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
           {selectedCustomer ? (
-            <div className="p-8">
+            <div className="p-4 sm:p-8">
               <div className="max-w-4xl mx-auto">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    Detalles del Customer
-                  </h2>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setSelectedCustomer(null)}
+                      className="lg:hidden p-2 -ml-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+                    >
+                      <svg
+                        className="w-6 h-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 19l-7-7 7-7"
+                        />
+                      </svg>
+                    </button>
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                      Detalles del Customer
+                    </h2>
+                  </div>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
+                      className="flex-1 sm:flex-none py-2 h-auto text-sm"
                       onClick={() =>
                         navigate(
                           `/patients/${selectedCustomer.customer_uuid}/day`,
@@ -241,32 +270,35 @@ const Customers: React.FC = () => {
                     >
                       Registrar día
                     </Button>
-                    <Button onClick={handleAnalyzePeriod}>
+                    <Button
+                      className="flex-1 sm:flex-none py-2 h-auto text-sm"
+                      onClick={handleAnalyzePeriod}
+                    >
                       Analizar Periodo
                     </Button>
                   </div>
                 </div>
 
-                <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-6">
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 sm:p-6 space-y-6">
                   {/* Información básica */}
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">
+                      <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                         Nombre Completo
                       </label>
-                      <p className="text-lg text-gray-900">
+                      <p className="text-base sm:text-lg text-gray-900 dark:text-white">
                         {selectedCustomer.customer_full_name}
                       </p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">
+                      <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                         Estado
                       </label>
                       <span
                         className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                           selectedCustomer.is_active
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300"
+                            : "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300"
                         }`}
                       >
                         {selectedCustomer.is_active ? "Activo" : "Inactivo"}
@@ -274,76 +306,76 @@ const Customers: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">
+                      <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                         Email
                       </label>
-                      <p className="text-gray-900">
+                      <p className="text-gray-900 dark:text-white break-all">
                         {selectedCustomer.customer_email}
                       </p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">
+                      <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                         Teléfono
                       </label>
-                      <p className="text-gray-900">
+                      <p className="text-gray-900 dark:text-white">
                         {selectedCustomer.customer_phone || "No disponible"}
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">
+                      <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                         Estado de Suscripción
                       </label>
-                      <p className="text-gray-900">
+                      <p className="text-gray-900 dark:text-white">
                         {selectedCustomer.subscription_status}
                       </p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">
+                      <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                         Servicio Solicitado
                       </label>
-                      <p className="text-gray-900">
+                      <p className="text-gray-900 dark:text-white">
                         {selectedCustomer.service_requested}
                       </p>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">
+                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                       UUID del Customer
                     </label>
-                    <p className="text-sm text-gray-600 font-mono bg-gray-50 p-2 rounded">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 font-mono bg-gray-50 dark:bg-gray-900/50 p-2 rounded">
                       {selectedCustomer.customer_uuid}
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">
+                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                       UUID del Médico
                     </label>
-                    <p className="text-sm text-gray-600 font-mono bg-gray-50 p-2 rounded">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 font-mono bg-gray-50 dark:bg-gray-900/50 p-2 rounded">
                       {selectedCustomer.medico_id}
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">
+                      <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                         Fecha de Otorgamiento
                       </label>
-                      <p className="text-gray-900">
+                      <p className="text-gray-900 dark:text-white">
                         {formatDateColombian(selectedCustomer.granted_at)}
                       </p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">
+                      <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                         Fecha de Revocación
                       </label>
-                      <p className="text-gray-900">
+                      <p className="text-gray-900 dark:text-white">
                         {selectedCustomer.revoked_at
                           ? formatDateColombian(selectedCustomer.revoked_at)
                           : "No revocado"}
@@ -353,10 +385,10 @@ const Customers: React.FC = () => {
 
                   {selectedCustomer.custom_message && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">
+                      <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                         Mensaje Personalizado
                       </label>
-                      <p className="text-gray-900 bg-blue-50 p-3 rounded">
+                      <p className="text-gray-900 dark:text-white bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
                         {selectedCustomer.custom_message}
                       </p>
                     </div>
@@ -365,10 +397,10 @@ const Customers: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
+            <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400 p-8 space-y-4">
+              <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-full">
                 <svg
-                  className="mx-auto h-16 w-16 text-gray-400"
+                  className="h-16 w-16 text-gray-400 dark:text-gray-500"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -376,15 +408,18 @@ const Customers: React.FC = () => {
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    strokeWidth={1.5}
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                   />
                 </svg>
-                <h3 className="mt-4 text-lg font-medium text-gray-900">
-                  Selecciona un customer
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Selecciona un Customer
                 </h3>
-                <p className="mt-2 text-sm text-gray-500">
-                  Elige un customer de la lista para ver sus detalles
+                <p className="text-sm max-w-xs">
+                  Elige un paciente de la lista de la izquierda para ver su
+                  información detallada y realizar análisis.
                 </p>
               </div>
             </div>
