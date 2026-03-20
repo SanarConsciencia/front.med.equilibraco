@@ -53,6 +53,7 @@ export interface SerializedMeal {
   is_favorite?: boolean | null;
   notes?: string | null;
   ingredients?: SerializedMealIngredient[];
+  media?: MealMedia | null;
   // allow extra fields for forward compatibility
   [key: string]: any;
 }
@@ -64,6 +65,30 @@ export interface SerializedMealIngredient {
   quantity?: number | null; // units are in `unit` field
   unit?: string | null; // e.g. "g", "ml", "porción"
   [key: string]: any;
+}
+
+// ═══════════════════════════════════════════════════════════
+// MEAL MEDIA AND DAY FEEDBACK (acceso médico)
+// ═══════════════════════════════════════════════════════════
+
+export interface MealMedia {
+  photo_url_1?: string | null;
+  photo_url_2?: string | null;
+  photo_url_3?: string | null;
+  audio_url_1?: string | null;
+  audio_url_2?: string | null;
+  customer_note?: string | null;
+  doctor_note?: string | null;
+}
+
+export interface DayFeedback {
+  id: number;
+  day_intake_id: number;
+  medico_id: string;
+  contenido: string;
+  score_general?: number | null;
+  created_at: string;
+  updated_at?: string | null;
 }
 
 export interface CustomerInfo {
@@ -711,6 +736,7 @@ export interface DayAnalysisResponse {
   inflammatory_analysis: InflammatoryAnalysis;
   fasting_hours?: number | null;
   tracking: TrackingData;
+  day_feedback?: DayFeedback | null;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -890,7 +916,7 @@ export interface SymptomsSummary {
   days_with_symptoms?: number | null;
   avg_per_day?: number | null;
   consistency_percentage?: number | null;
-  most_common?: Array<{name: string; count: number}> | null;
+  most_common?: Array<{ name: string; count: number }> | null;
   tracking_status: string;
   recommendation: string;
   message?: string | null;
