@@ -35,11 +35,21 @@ interface PatientDayState {
     contenido: string,
     scoreGeneral?: number,
   ) => Promise<void>;
+  deleteDayFeedback: (
+    patientUuid: string,
+    date: string,
+    dayIntakeId: number,
+  ) => Promise<void>;
   saveMealNote: (
     patientUuid: string,
     date: string,
     mealIntakeId: number,
     doctorNote: string,
+  ) => Promise<void>;
+  deleteMealNote: (
+    patientUuid: string,
+    date: string,
+    mealIntakeId: number,
   ) => Promise<void>;
 
   // Day CRUD
@@ -171,6 +181,16 @@ export const usePatientDayStore = create<PatientDayState>((set, get) => ({
     const doctorId = useAppStore.getState().user?.id;
     if (!doctorId) throw new Error("No hay médico autenticado");
     await medicalDayService.saveMealNote(mealIntakeId, doctorNote, doctorId);
+    await get().loadDay(patientUuid, date);
+  },
+
+  deleteDayFeedback: async (patientUuid, date, dayIntakeId) => {
+    await medicalDayService.deleteDayFeedback(dayIntakeId);
+    await get().loadDay(patientUuid, date);
+  },
+
+  deleteMealNote: async (patientUuid, date, mealIntakeId) => {
+    await medicalDayService.deleteMealNote(mealIntakeId);
     await get().loadDay(patientUuid, date);
   },
 

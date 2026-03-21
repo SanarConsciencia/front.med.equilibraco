@@ -6,6 +6,7 @@ interface DayFeedbackPanelProps {
   dayIntakeId: number;
   feedback?: DayFeedback | null;
   onSave: (contenido: string, score?: number) => Promise<void>;
+  onDelete: () => Promise<void>;
 }
 
 const DayFeedbackPanel: React.FC<DayFeedbackPanelProps> = ({
@@ -14,6 +15,7 @@ const DayFeedbackPanel: React.FC<DayFeedbackPanelProps> = ({
   dayIntakeId: _dayIntakeId,
   feedback,
   onSave,
+  onDelete,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [contenido, setContenido] = useState(feedback?.contenido ?? "");
@@ -21,6 +23,7 @@ const DayFeedbackPanel: React.FC<DayFeedbackPanelProps> = ({
     feedback?.score_general != null ? String(feedback.score_general) : "",
   );
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
   const handleOpen = () => {
@@ -44,6 +47,18 @@ const DayFeedbackPanel: React.FC<DayFeedbackPanelProps> = ({
       setError(err instanceof Error ? err.message : "Error al guardar");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("¿Eliminar la retroalimentación de este día?")) return;
+    setDeleting(true);
+    try {
+      await onDelete();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error al eliminar");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -74,6 +89,16 @@ const DayFeedbackPanel: React.FC<DayFeedbackPanelProps> = ({
           >
             {feedback ? "Editar" : "+ Agregar"}
           </button>
+          {feedback && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleting}
+              className="text-xs font-medium text-red-500 dark:text-red-400 hover:underline disabled:opacity-50"
+            >
+              {deleting ? "Eliminando..." : "Eliminar"}
+            </button>
+          )}
         </div>
 
         {feedback ? (

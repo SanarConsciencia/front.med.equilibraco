@@ -43,7 +43,9 @@ const PatientDayPage: React.FC = () => {
   const error = usePatientDayStore((s) => (key ? s.getError(key) : undefined));
 
   const saveDayFeedback = usePatientDayStore((s) => s.saveDayFeedback);
+  const deleteDayFeedback = usePatientDayStore((s) => s.deleteDayFeedback);
   const saveMealNote = usePatientDayStore((s) => s.saveMealNote);
+  const deleteMealNote = usePatientDayStore((s) => s.deleteMealNote);
   const deleteMeal = usePatientDayStore((s) => s.deleteMeal);
   const createDay = usePatientDayStore((s) => s.createDay);
   const createMeal = usePatientDayStore((s) => s.createMeal);
@@ -268,6 +270,7 @@ const PatientDayPage: React.FC = () => {
               onSave={(contenido, score) =>
                 saveDayFeedback(uuid, date, day.day.id, contenido, score)
               }
+              onDelete={() => deleteDayFeedback(uuid, date, day.day.id)}
             />
 
             {/* Meals */}
@@ -311,6 +314,9 @@ const PatientDayPage: React.FC = () => {
                     onEditMeal={handleOpenEditMeal}
                     onSaveMealNote={(mealId, note) =>
                       saveMealNote(uuid, date, mealId, note)
+                    }
+                    onDeleteMealNote={(mealId) =>
+                      deleteMealNote(uuid, date, mealId)
                     }
                     onDeleteMeal={(dayId, mealId) =>
                       deleteMeal(uuid, date, dayId, mealId)

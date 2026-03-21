@@ -66,3 +66,29 @@ export const saveDayFeedback = async (
     throw new Error(`Error guardando feedback: ${res.status} ${text}`);
   }
 };
+
+// ── Eliminar retroalimentación del día ────────────────────────────────────────
+
+export const deleteDayFeedback = async (dayIntakeId: number): Promise<void> => {
+  const res = await authFetch(
+    `${BASE}/api/v1/media/days/${dayIntakeId}/feedback`,
+    { method: "DELETE" },
+  );
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Error eliminando feedback: ${res.status} ${text}`);
+  }
+};
+
+// ── Eliminar nota médica de un plato ─────────────────────────────────────────
+
+export const deleteMealNote = async (mealIntakeId: number): Promise<void> => {
+  const res = await authFetch(
+    `${BASE}/api/v1/media/meals/${mealIntakeId}/doctor-note`,
+    { method: "DELETE" },
+  );
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Error eliminando nota médica: ${res.status} ${text}`);
+  }
+};

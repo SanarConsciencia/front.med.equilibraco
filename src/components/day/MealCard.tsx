@@ -15,6 +15,7 @@ interface MealCardProps {
   dayId: number;
   onEditMeal?: (meal: SerializedMeal) => void;
   onSaveMealNote: (mealIntakeId: number, note: string) => Promise<void>;
+  onDeleteMealNote: (mealIntakeId: number) => Promise<void>;
   onDeleteMeal: (dayId: number, mealId: number) => Promise<void>;
   onAdjustServing: (
     foodId: number,
@@ -31,6 +32,7 @@ const MealCard: React.FC<MealCardProps> = ({
   dayId,
   onEditMeal,
   onSaveMealNote,
+  onDeleteMealNote,
   onDeleteMeal,
   onAdjustServing,
   onReloadDay,
@@ -40,6 +42,7 @@ const MealCard: React.FC<MealCardProps> = ({
   const [servingFood, setServingFood] =
     useState<SerializedMealIngredient | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [deletingNote, setDeletingNote] = useState(false);
 
   const openMeal = useMedicoMealsModalStore((s) => s.openMeal);
 
@@ -55,6 +58,18 @@ const MealCard: React.FC<MealCardProps> = ({
       await onDeleteMeal(dayId, meal.id);
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleDeleteNote = async () => {
+    if (!confirm("¿Eliminar la nota médica de este plato?")) return;
+    setDeletingNote(true);
+    try {
+      await onDeleteMealNote(meal.id);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error al eliminar la nota");
+    } finally {
+      setDeletingNote(false);
     }
   };
 
@@ -154,6 +169,16 @@ const MealCard: React.FC<MealCardProps> = ({
             >
               {doctorNote ? "Editar" : "Agregar"}
             </button>
+            {doctorNote && (
+              <button
+                type="button"
+                onClick={handleDeleteNote}
+                disabled={deletingNote}
+                className="flex-shrink-0 text-xs font-medium text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 disabled:opacity-50"
+              >
+                {deletingNote ? "..." : "Eliminar"}
+              </button>
+            )}
           </div>
 
           {/* Ingredients */}
