@@ -63,14 +63,14 @@ const ServingAdjustModal: React.FC<ServingAdjustModalProps> = ({
               value={servingSize}
               onChange={(e) => setServingSize(e.target.value)}
               placeholder="0"
-              className="flex-1 px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="flex-1 px-3 py-2.5 text-base sm:text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
             />
             <input
               type="text"
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
               placeholder="g"
-              className="w-20 px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-20 px-3 py-2.5 text-base sm:text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
           {food.current_serving != null && (

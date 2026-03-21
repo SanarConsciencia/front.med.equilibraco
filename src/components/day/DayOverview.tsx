@@ -17,32 +17,20 @@ function fmtVal(v: number | null | undefined): string {
   return v.toFixed(3);
 }
 
-function barColor(compliance: number, invertBad = false): string {
-  if (invertBad) {
-    if (compliance <= 80) return "bg-green-500";
-    if (compliance <= 100) return "bg-yellow-400";
-    return "bg-red-500";
-  }
-  if (compliance >= 90 && compliance <= 115) return "bg-green-500";
+function barColor(compliance: number): string {
+  if (compliance >= 90 && compliance <= 110) return "bg-green-500";
+  if (compliance >= 110) return "bg-orange-400";
   if (compliance >= 70) return "bg-yellow-400";
-  if (compliance >= 50) return "bg-orange-400";
   return "bg-red-500";
 }
 
-function badgeClasses(compliance: number, invertBad = false): string {
-  if (invertBad) {
-    if (compliance <= 80)
-      return "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300";
-    if (compliance <= 100)
-      return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300";
-    return "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300";
-  }
-  if (compliance >= 90 && compliance <= 115)
+function badgeClasses(compliance: number): string {
+  if (compliance >= 90 && compliance <= 110)
     return "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300";
+  if (compliance >= 110)
+    return "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300";
   if (compliance >= 70)
     return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300";
-  if (compliance >= 50)
-    return "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300";
   return "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300";
 }
 
@@ -61,7 +49,6 @@ interface NutrientRowProps {
   required: number | null | undefined;
   compliance: number | null | undefined;
   unit: string;
-  invertBad?: boolean;
 }
 
 const NutrientRow: React.FC<NutrientRowProps> = ({
@@ -70,7 +57,6 @@ const NutrientRow: React.FC<NutrientRowProps> = ({
   required,
   compliance,
   unit,
-  invertBad = false,
 }) => {
   const hasReq =
     required !== null && required !== undefined && (required as number) > 0;
@@ -89,32 +75,26 @@ const NutrientRow: React.FC<NutrientRowProps> = ({
   const statusLabel = (() => {
     if (pct === null || !hasCompliance) return null;
     const req = required as number;
-    const cons = (consumed as number) ?? 0;
-    if (!invertBad) {
-      if (pct < 70) {
-        const missing = req - cons;
-        return {
-          text: `↓ falta ${fmtVal(missing)}${unit}`,
-          cls: "text-red-500 dark:text-red-400",
-        };
-      }
-      if (pct > 115) {
-        const excess = cons - req;
-        return {
-          text: `↑ exceso ${fmtVal(excess)}${unit}`,
-          cls: "text-orange-500 dark:text-orange-400",
-        };
-      }
-    } else {
-      if (pct > 100) {
-        const excess = cons - req;
-        return {
-          text: `↑ excedido ${fmtVal(excess)}${unit}`,
-          cls: "text-red-500 dark:text-red-400",
-        };
-      }
+    const cons = consumed as number ?? 0;
+    
+    if (pct < 90) {
+      const missing = req - cons;
+      return {
+        text: `↓ falta ${fmtVal(missing)}${unit}`,
+        cls: "text-red-500 dark:text-red-400",
+      };
     }
-    return null;
+    if (pct > 110) {
+      const excess = cons - req;
+      return {
+        text: `↑ exceso ${fmtVal(excess)}${unit}`,
+        cls: "text-orange-500 dark:text-orange-400",
+      };
+    }
+    return {
+      text: "✓ balanceado",
+      cls: "text-green-600 dark:text-green-400"
+    };
   })();
 
   return (
@@ -125,7 +105,7 @@ const NutrientRow: React.FC<NutrientRowProps> = ({
         </span>
         {pct !== null && (
           <span
-            className={`text-xs font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${badgeClasses(pct, invertBad)}`}
+            className={`text-xs font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${badgeClasses(pct)}`}
           >
             {pct.toFixed(0)}%
           </span>
@@ -136,7 +116,7 @@ const NutrientRow: React.FC<NutrientRowProps> = ({
           <div className="flex items-center gap-2">
             <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all ${barColor(pct as number, invertBad)}`}
+                className={`h-full rounded-full transition-all ${barColor(pct as number)}`}
                 style={{ width: barW }}
               />
             </div>
@@ -166,7 +146,6 @@ interface NutrientItem {
   key: string;
   label: string;
   unit: string;
-  invertBad?: boolean;
 }
 
 interface CategorySection {
@@ -189,7 +168,7 @@ const CATEGORIES: CategorySection[] = [
     nutrients: [
       { key: "proteins_g", label: "Proteínas", unit: "g" },
       { key: "carbs_g", label: "Carbohidratos", unit: "g" },
-      { key: "sugars_g", label: "Azúcares", unit: "g", invertBad: true },
+      { key: "sugars_g", label: "Azúcares", unit: "g" },
       { key: "starches_g", label: "Almidón", unit: "g" },
       { key: "fats_g", label: "Grasas totales", unit: "g" },
       { key: "fiber_g", label: "Fibra total", unit: "g" },
@@ -203,7 +182,7 @@ const CATEGORIES: CategorySection[] = [
       "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800",
     hasCompliance: true,
     nutrients: [
-      { key: "sfa_g", label: "Saturadas", unit: "g", invertBad: true },
+      { key: "sfa_g", label: "Saturadas", unit: "g" },
       { key: "mufa_g", label: "MUFA", unit: "g" },
       { key: "pufa_g", label: "PUFA", unit: "g" },
       { key: "omega_3_epa_dha_mg", label: "Omega-3 EPA/DHA", unit: "mg" },
@@ -212,14 +191,12 @@ const CATEGORIES: CategorySection[] = [
       {
         key: "trans_fats_g",
         label: "Grasas trans",
-        unit: "g",
-        invertBad: true,
+        unit: "g"
       },
       {
         key: "cholesterol_mg",
         label: "Colesterol",
-        unit: "mg",
-        invertBad: true,
+        unit: "mg"
       },
     ],
   },
@@ -248,7 +225,7 @@ const CATEGORIES: CategorySection[] = [
       { key: "magnesium", label: "Magnesio", unit: "mg" },
       { key: "zinc", label: "Zinc", unit: "mg" },
       { key: "potassium", label: "Potasio", unit: "mg" },
-      { key: "sodium", label: "Sodio", unit: "mg", invertBad: true },
+      { key: "sodium", label: "Sodio", unit: "mg" },
     ],
   },
   {
@@ -263,7 +240,7 @@ const CATEGORIES: CategorySection[] = [
       { key: "vitamin_d", label: "Vitamina D", unit: "μg" },
       { key: "vitamin_b1", label: "B1 (Tiamina)", unit: "mg" },
       { key: "vitamin_b2", label: "B2 (Riboflavina)", unit: "mg" },
-      { key: "vitamin_b6", label: "B6", unit: "mg" },
+      { key: "vitamin_b6", label: "Vitamina B6", unit: "mg" },
       { key: "vitamin_b12", label: "B12", unit: "μg" },
       { key: "folate", label: "Folato", unit: "μg" },
       { key: "vitamin_a", label: "Vitamina A", unit: "μg" },
@@ -287,7 +264,7 @@ const CATEGORIES: CategorySection[] = [
       { key: "flavonols_mg", label: "Flavonoles", unit: "mg" },
       { key: "flavanones_mg", label: "Flavanonas", unit: "mg" },
       { key: "isoflavones_mg", label: "Isoflavonas", unit: "mg" },
-      { key: "alcohol_g", label: "Alcohol", unit: "g", invertBad: true },
+      { key: "alcohol_g", label: "Alcohol", unit: "g" },
       { key: "caffeine_mg", label: "Cafeína", unit: "mg" },
     ],
   },
@@ -347,8 +324,8 @@ const CategoryAccordion: React.FC<AccordionProps> = ({
     ? filledNutrients.filter((n) => {
         const comp = compliance[n.key];
         const req = requirements[n.key];
-        if (!comp || !req || req <= 0 || n.invertBad) return false;
-        return comp < 70;
+        if (!comp || !req || req <= 0) return false;
+        return comp < 90;
       }).length
     : 0;
 
@@ -357,7 +334,7 @@ const CategoryAccordion: React.FC<AccordionProps> = ({
         const comp = compliance[n.key];
         const req = requirements[n.key];
         if (!comp || !req || req <= 0) return false;
-        return n.invertBad ? comp > 100 : comp > 115;
+        return comp > 110;
       }).length
     : 0;
 
@@ -416,7 +393,6 @@ const CategoryAccordion: React.FC<AccordionProps> = ({
                   required={requirements[n.key]}
                   compliance={compliance[n.key]}
                   unit={n.unit}
-                  invertBad={n.invertBad}
                 />
               ))}
               {filledNutrients.length === 0 && (
@@ -488,9 +464,9 @@ const DayOverview: React.FC<DayOverviewProps> = ({ day }) => {
     number
   >;
 
-  // Controlled open state per section (first 3 open by default)
+  // Controlled open state per section (all collapsed by default)
   const [openSections, setOpenSections] = useState<Set<string>>(
-    () => new Set(CATEGORIES.slice(0, 3).map((c) => c.id)),
+    () => new Set<string>(),
   );
 
   const expandAll = () => setOpenSections(new Set(CATEGORIES.map((c) => c.id)));
@@ -558,25 +534,41 @@ const DayOverview: React.FC<DayOverviewProps> = ({ day }) => {
             const consumed = contributions[key];
             const required = requirements[key];
             const color =
-              pct >= 90 && pct <= 115
+              pct >= 90 && pct <= 110
                 ? "text-green-600 dark:text-green-400"
-                : pct >= 70
-                  ? "text-yellow-500 dark:text-yellow-400"
-                  : pct >= 50
-                    ? "text-orange-500 dark:text-orange-400"
+                : pct > 110
+                  ? "text-orange-500 dark:text-orange-400"
+                  : pct >= 70
+                    ? "text-yellow-500 dark:text-yellow-400"
                     : "text-red-500 dark:text-red-400";
+
+            const diff = (consumed ?? 0) - (required ?? 0);
+            const statusLabel =
+              required && required > 0
+                ? pct < 90
+                  ? { text: `↓ falta ${fmtVal(Math.abs(diff))}`, cls: "text-red-500 dark:text-red-400" }
+                  : pct > 110
+                    ? { text: `↑ exceso ${fmtVal(diff)}`, cls: "text-orange-500 dark:text-orange-400" }
+                    : { text: "✓ balan.", cls: "text-green-600 dark:text-green-400 text-[8px]" }
+                : null;
+
             return (
               <div key={key} className="text-center">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5 truncate">
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5 truncate">
                   {label}
                 </p>
-                <p className={`text-sm font-bold ${color}`}>
+                <p className={`text-base font-bold ${color} leading-none`}>
                   {Math.round(pct)}%
                 </p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 tabular-nums">
+                <p className="text-[10px] text-gray-400 dark:text-gray-600 tabular-nums">
                   {fmtVal(consumed)}/{fmtVal(required)}
                   {unit}
                 </p>
+                {statusLabel && (
+                  <p className={`text-[9px] font-bold mt-0.5 ${statusLabel.cls} leading-none whitespace-nowrap`}>
+                    {statusLabel.text}
+                  </p>
+                )}
               </div>
             );
           })}
@@ -621,22 +613,15 @@ const DayOverview: React.FC<DayOverviewProps> = ({ day }) => {
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400 px-1 pb-1">
         <span className="flex items-center gap-1">
           <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-500" />
-          90–115%
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block w-2.5 h-2.5 rounded-full bg-yellow-400" />
-          70–89%
+          90–110% (Balanceado)
         </span>
         <span className="flex items-center gap-1">
           <span className="inline-block w-2.5 h-2.5 rounded-full bg-orange-400" />
-          50–69%
+          &gt;110% (Exceso)
         </span>
         <span className="flex items-center gap-1">
           <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-500" />
-          &lt;50%
-        </span>
-        <span className="text-gray-400 dark:text-gray-500">
-          · Sodio/Saturadas/Trans: verde si bajo el límite
+          &lt;90% (Falta)
         </span>
       </div>
     </div>

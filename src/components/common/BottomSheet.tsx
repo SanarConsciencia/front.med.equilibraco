@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 
 interface BottomSheetProps {
   isOpen: boolean;
@@ -13,10 +13,17 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
   title,
   children,
 }) => {
+  const startY = useRef<number | null>(null);
+  const currentY = useRef<number>(0);
+  const sheetRef = useRef<HTMLDivElement>(null);
+
   // Close on backdrop click; block scroll when open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      if (sheetRef.current) {
+        sheetRef.current.style.transform = "";
+      }
     } else {
       document.body.style.overflow = "";
     }
@@ -24,6 +31,33 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
       document.body.style.overflow = "";
     };
   }, [isOpen]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (startY.current === null) return;
+    const deltaY = e.touches[0].clientY - startY.current;
+    if (deltaY > 0) {
+      currentY.current = deltaY;
+      if (sheetRef.current) {
+        sheetRef.current.style.transform = `translateY(${deltaY}px)`;
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (currentY.current > 100) {
+      onClose();
+    } else {
+      if (sheetRef.current) {
+        sheetRef.current.style.transform = "";
+      }
+    }
+    startY.current = null;
+    currentY.current = 0;
+  };
 
   if (!isOpen) return null;
 
@@ -37,10 +71,18 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
       />
 
       {/* Sheet */}
-      <div className="relative w-full bg-white dark:bg-gray-900 rounded-t-2xl shadow-xl max-h-[90vh] flex flex-col">
+      <div
+        ref={sheetRef}
+        className="relative w-full bg-white dark:bg-gray-900 rounded-t-2xl shadow-xl max-h-[90vh] flex flex-col transition-transform duration-200"
+      >
         {/* Handle */}
-        <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
-          <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+        <div
+          className="flex justify-center pt-3 pb-1 flex-shrink-0 cursor-grab active:cursor-grabbing"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div className="w-10 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600" />
         </div>
 
         {/* Header */}

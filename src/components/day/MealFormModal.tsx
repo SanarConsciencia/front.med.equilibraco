@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 export interface MealFormData {
   meal_name: string;
@@ -27,6 +27,10 @@ const MealFormModal: React.FC<MealFormModalProps> = ({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  const startY = useRef<number | null>(null);
+  const currentY = useRef<number>(0);
+  const panelRef = useRef<HTMLDivElement>(null);
+
   // Sync form state when modal opens or initialData changes
   useEffect(() => {
     if (isOpen) {
@@ -34,9 +38,40 @@ const MealFormModal: React.FC<MealFormModalProps> = ({
       setMealTime(initialData?.meal_time ?? "");
       setNotes(initialData?.notes ?? "");
       setError("");
+      // Reset transform when opening
+      if (panelRef.current) {
+        panelRef.current.style.transform = "";
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (startY.current === null) return;
+    const deltaY = e.touches[0].clientY - startY.current;
+    if (deltaY > 0) {
+      currentY.current = deltaY;
+      if (panelRef.current) {
+        panelRef.current.style.transform = `translateY(${deltaY}px)`;
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (currentY.current > 100) {
+      onClose();
+    } else {
+      if (panelRef.current) {
+        panelRef.current.style.transform = "";
+      }
+    }
+    startY.current = null;
+    currentY.current = 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,12 +101,25 @@ const MealFormModal: React.FC<MealFormModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       {/* Overlay */}
       <div
-        className="absolute inset-0 bg-black/40 dark:bg-black/60"
+        className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-[1px]"
         onClick={onClose}
       />
 
       {/* Panel */}
-      <div className="relative w-full sm:max-w-md bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-2xl shadow-xl p-5 space-y-4">
+      <div
+        ref={panelRef}
+        className="relative w-full sm:max-w-md bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-2xl shadow-2xl p-5 space-y-4 touch-none transition-transform duration-200"
+      >
+        {/* Drag Handle (Mobile only) */}
+        <div
+          className="sm:hidden flex justify-center -mt-2 mb-2 py-2"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div className="w-12 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600" />
+        </div>
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold text-gray-900 dark:text-white">
@@ -111,7 +159,7 @@ const MealFormModal: React.FC<MealFormModalProps> = ({
               value={mealName}
               onChange={(e) => setMealName(e.target.value)}
               placeholder="Ej: Desayuno, Ensalada de pollo..."
-              className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-colors"
+              className="w-full px-3 py-2.5 text-base sm:text-sm rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-colors"
               autoFocus
             />
           </div>
@@ -125,7 +173,7 @@ const MealFormModal: React.FC<MealFormModalProps> = ({
               type="time"
               value={mealTime}
               onChange={(e) => setMealTime(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-colors"
+              className="w-full px-3 py-2.5 text-base sm:text-sm rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-colors"
             />
           </div>
 
@@ -139,7 +187,7 @@ const MealFormModal: React.FC<MealFormModalProps> = ({
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Observaciones del plato..."
               rows={2}
-              className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 resize-none transition-colors"
+              className="w-full px-3 py-2.5 text-base sm:text-sm rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 resize-none transition-colors"
             />
           </div>
 

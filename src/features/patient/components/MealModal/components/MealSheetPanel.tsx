@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import type { SerializedMeal } from "../../../../../types/medicalApiTypes";
 import type { IngredientInput } from "../types";
 import { MacroRingsHeader } from "./MacroRingsHeader";
@@ -70,6 +70,45 @@ export const MealSheetPanel: React.FC<MealSheetPanelProps> = ({
   onSave,
   onLoadTemplate,
 }) => {
+  const startY = useRef<number | null>(null);
+  const currentY = useRef<number>(0);
+  const sheetRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (sheetRef.current) {
+        sheetRef.current.style.transform = "";
+      }
+    }
+  }, [isOpen]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (startY.current === null) return;
+    const deltaY = e.touches[0].clientY - startY.current;
+    if (deltaY > 0) {
+      currentY.current = deltaY;
+      if (sheetRef.current) {
+        sheetRef.current.style.transform = `translateY(${deltaY}px)`;
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (currentY.current > 100) {
+      onClose();
+    } else {
+      if (sheetRef.current) {
+        sheetRef.current.style.transform = "";
+      }
+    }
+    startY.current = null;
+    currentY.current = 0;
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -82,19 +121,35 @@ export const MealSheetPanel: React.FC<MealSheetPanelProps> = ({
       />
 
       {/* Sheet */}
-      <div className="relative w-full bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl max-h-[92vh] flex flex-col">
+      <div
+        ref={sheetRef}
+        className="relative w-full bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl max-h-[92vh] flex flex-col transition-transform duration-200"
+      >
         {/* Handle */}
-        <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
-          <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+        <div
+          className="flex justify-center pt-3 pb-1 flex-shrink-0 cursor-grab active:cursor-grabbing"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div
+            className="w-10 h-1.5 rounded-full bg-gray-300 dark:bg-gray-700"
+            title="Desliza hacia abajo para cerrar"
+          />
         </div>
 
         {/* Header row */}
-        <div className="flex items-center justify-between px-4 pb-2 flex-shrink-0">
-          <div className="min-w-0 flex-1">
-            <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">
+        <div
+          className="flex items-start justify-between px-4 pb-2 flex-shrink-0"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div className="min-w-0 flex-1 pt-0.5">
+            <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 dark:text-gray-500 mb-0.5">
               Editando plato
             </p>
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white truncate">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white truncate leading-tight">
               {meal.meal_name}
             </h2>
           </div>
@@ -103,11 +158,11 @@ export const MealSheetPanel: React.FC<MealSheetPanelProps> = ({
             <button
               type="button"
               onClick={onLoadTemplate}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-100 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors shadow-sm"
               title="Cargar desde plato anterior"
             >
               <svg
-                className="w-4 h-4 inline-block mr-1"
+                className="w-3.5 h-3.5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -115,7 +170,7 @@ export const MealSheetPanel: React.FC<MealSheetPanelProps> = ({
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={2}
+                  strokeWidth={2.5}
                   d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"
                 />
               </svg>
@@ -125,7 +180,7 @@ export const MealSheetPanel: React.FC<MealSheetPanelProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="p-2 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               aria-label="Cerrar"
             >
               <svg
@@ -146,11 +201,13 @@ export const MealSheetPanel: React.FC<MealSheetPanelProps> = ({
         </div>
 
         {/* Macro rings */}
-        <MacroRingsHeader
-          pendingNutrition={pendingNutrition}
-          dayBase={dayBase}
-          dayTargets={dayTargets}
-        />
+        <div className="bg-gray-50/50 dark:bg-gray-800/20 mx-2 rounded-2xl mb-1">
+          <MacroRingsHeader
+            pendingNutrition={pendingNutrition}
+            dayBase={dayBase}
+            dayTargets={dayTargets}
+          />
+        </div>
 
         {/* Ingredients list (scrollable) */}
         <div className="flex-1 overflow-y-auto px-4 py-3 min-h-0">
