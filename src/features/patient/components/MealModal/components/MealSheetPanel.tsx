@@ -73,61 +73,63 @@ export const MealSheetPanel: React.FC<MealSheetPanelProps> = ({
 }) => {
   return (
     <ModalSheet isOpen={isOpen} onClose={onClose} maxHeightClass="max-h-[92vh]">
-      {/* Header row */}
-      <div className="flex items-start justify-between px-4 pb-2 flex-shrink-0">
-        <div className="min-w-0 flex-1 pt-0.5">
-          <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 dark:text-gray-500 mb-0.5">
+      {/* Header */}
+      <div className="px-4 pb-2 flex-shrink-0">
+        {/* Top row: label + actions */}
+        <div className="flex items-center justify-between mb-0.5">
+          <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 dark:text-gray-500">
             Editando plato
           </p>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white truncate leading-tight">
-            {meal.meal_name}
-          </h2>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-          {/* Templates button */}
-          <button
-            type="button"
-            onClick={onLoadTemplate}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-100 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors shadow-sm"
-            title="Cargar desde plato anterior"
-          >
-            <svg
-              className="w-3.5 h-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          <div className="flex items-center gap-2">
+            {/* Templates button */}
+            <button
+              type="button"
+              onClick={onLoadTemplate}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-100 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors shadow-sm"
+              title="Cargar desde plato anterior"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2.5}
-                d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"
-              />
-            </svg>
-            Plantillas
-          </button>
-          {/* Close button */}
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            aria-label="Cerrar"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+              <svg
+                className="w-3.5 h-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"
+                />
+              </svg>
+              Plantillas
+            </button>
+            {/* Close button */}
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              aria-label="Cerrar"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
+        {/* Meal name — full width, no truncation fight */}
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight pr-1">
+          {meal.meal_name}
+        </h2>
       </div>
 
       {/* Macro rings */}
