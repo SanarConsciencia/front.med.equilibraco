@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { CustomerFood } from "../../../../../types/intakeCrudTypes";
+import { usePatientFoodsStore } from "../../../../../stores/patientFoodsStore";
 import { FoodResults } from "./FoodResults";
 
 interface FoodResultsModalProps {
@@ -9,6 +10,7 @@ interface FoodResultsModalProps {
   onQueryChange: (q: string) => void;
   results: CustomerFood[];
   onSelect: (food: CustomerFood) => void;
+  patientUuid: string;
 }
 
 /** Adjusts the sheet height when the virtual keyboard appears via Visual Viewport API */
@@ -37,9 +39,13 @@ export const FoodResultsModal: React.FC<FoodResultsModalProps> = ({
   onQueryChange,
   results,
   onSelect,
+  patientUuid,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const vpHeight = useVisualViewportHeight();
+  const isLoading = usePatientFoodsStore((s) =>
+    s.loadingPatients.has(patientUuid),
+  );
 
   // Auto-focus input when modal opens
   useEffect(() => {
@@ -124,7 +130,31 @@ export const FoodResultsModal: React.FC<FoodResultsModalProps> = ({
 
         {/* Results */}
         <div className="overflow-y-auto flex-1 px-4 pb-safe-bottom">
-          <FoodResults results={results} query={query} onSelect={onSelect} />
+          {isLoading ? (
+            <div className="flex justify-center items-center py-10">
+              <svg
+                className="animate-spin w-6 h-6 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                />
+              </svg>
+            </div>
+          ) : (
+            <FoodResults results={results} query={query} onSelect={onSelect} />
+          )}
         </div>
       </div>
     </div>

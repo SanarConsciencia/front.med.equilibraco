@@ -92,6 +92,7 @@ export const MealModal: React.FC<MealModalProps> = ({
         onQueryChange={setSearchQuery}
         results={searchResults}
         onSelect={handleSelectFromSearch}
+        patientUuid={patientUuid}
       />
 
       {/* Ingredient quantity editor */}
