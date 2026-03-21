@@ -145,7 +145,7 @@ const Customers: React.FC = () => {
         {/* Sidebar izquierdo con lista de customers */}
         <div
           className={`
-          fixed inset-y-0 left-0 z-40 w-80 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto transform transition-transform duration-300 lg:relative lg:translate-x-0
+          fixed top-16 bottom-0 left-0 z-40 w-80 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto transform transition-transform duration-300 lg:relative lg:top-auto lg:bottom-auto lg:translate-x-0
           ${selectedCustomer && !loading ? "-translate-x-full" : "translate-x-0"}
           ${!selectedCustomer && "translate-x-0"}
         `}
