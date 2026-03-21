@@ -13,6 +13,7 @@ import MealCard from "../components/day/MealCard";
 import MealFormModal from "../components/day/MealFormModal";
 import type { MealFormData } from "../components/day/MealFormModal";
 import { GlobalMealModal } from "../components/common/GlobalMealModal";
+import NutriAnalysisPage from "./NutriAnalysisPage";
 
 const PatientDayPage: React.FC = () => {
   const { uuid } = useParams<{ uuid: string }>();
@@ -31,6 +32,7 @@ const PatientDayPage: React.FC = () => {
   const [mealFormOpen, setMealFormOpen] = useState(false);
   const [editingMeal, setEditingMeal] = useState<SerializedMeal | null>(null);
   const [creatingDay, setCreatingDay] = useState(false);
+  const [nutriAnalysisOpen, setNutriAnalysisOpen] = useState(false);
 
   // Initialize data
   usePatientData(uuid, date);
@@ -225,6 +227,40 @@ const PatientDayPage: React.FC = () => {
             {/* Day overview */}
             <DayOverview day={day} />
 
+            {/* Nutrient analysis trigger */}
+            <button
+              type="button"
+              onClick={() => setNutriAnalysisOpen(true)}
+              className="w-full flex items-center justify-between gap-3 px-4 py-3.5 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 text-left active:bg-gray-50 dark:active:bg-gray-800 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center flex-shrink-0">
+                  <span className="text-lg">🔬</span>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                    Análisis por nutriente
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                    Ver qué ingredientes aportaron a cada nutriente
+                  </p>
+                </div>
+              </div>
+              <svg
+                className="w-5 h-5 text-gray-300 dark:text-gray-600 flex-shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+
             {/* Day feedback */}
             <DayFeedbackPanel
               dayIntakeId={day.day.id}
@@ -322,6 +358,17 @@ const PatientDayPage: React.FC = () => {
 
       {/* Global meal modal — always mounted, activated via useMedicoMealsModalStore */}
       <GlobalMealModal />
+
+      {/* Nutrient analysis full-screen overlay */}
+      {day && (
+        <NutriAnalysisPage
+          day={day}
+          date={date}
+          patientName={patientName}
+          isOpen={nutriAnalysisOpen}
+          onClose={() => setNutriAnalysisOpen(false)}
+        />
+      )}
 
       {/* Meal create/edit modal */}
       <MealFormModal
