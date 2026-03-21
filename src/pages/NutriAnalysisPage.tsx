@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import type { DayAnalysisResponse } from "../types/medicalApiTypes";
+import { ModalPortal } from "../components/ui/ModalPortal";
 
 // ─── Public props ───────────────────────────────────────────────────────────
 
@@ -1010,68 +1011,22 @@ const NutriAnalysisPage: React.FC<NutriAnalysisPageProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex flex-col bg-gray-50 dark:bg-gray-950"
-      role="dialog"
-      aria-modal="true"
-    >
-      {/* ── Header ─────────────────────────────────────────────── */}
-      <div className="flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div className="flex items-center gap-2 px-3 py-3">
-          <button
-            type="button"
-            onClick={
-              selectedNutrient ? () => setSelectedNutrient(null) : onClose
-            }
-            className="p-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 transition-colors flex-shrink-0"
-            aria-label={selectedNutrient ? "Volver" : "Cerrar"}
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-
-          <div className="flex-1 min-w-0">
-            {selectedNutrient ? (
-              <>
-                <p className="text-base font-bold text-gray-900 dark:text-white truncate">
-                  {selectedNutrient.label}
-                </p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">
-                  Desglose por ingrediente
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-base font-bold text-gray-900 dark:text-white">
-                  Análisis Nutricional
-                </p>
-                {(patientName || date) && (
-                  <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
-                    {[patientName, date].filter(Boolean).join(" · ")}
-                  </p>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* Close always visible */}
-          {selectedNutrient && (
+    <ModalPortal isOpen={isOpen}>
+      <div
+        className="fixed inset-0 z-50 flex flex-col bg-gray-50 dark:bg-gray-950"
+        role="dialog"
+        aria-modal="true"
+      >
+        {/* ── Header ─────────────────────────────────────────────── */}
+        <div className="flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+          <div className="flex items-center gap-2 px-3 py-3">
             <button
               type="button"
-              onClick={onClose}
-              className="p-2 rounded-xl text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0"
-              aria-label="Cerrar"
+              onClick={
+                selectedNutrient ? () => setSelectedNutrient(null) : onClose
+              }
+              className="p-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 transition-colors flex-shrink-0"
+              aria-label={selectedNutrient ? "Volver" : "Cerrar"}
             >
               <svg
                 className="w-5 h-5"
@@ -1083,123 +1038,171 @@ const NutriAnalysisPage: React.FC<NutriAnalysisPageProps> = ({
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
+                  d="M15 19l-7-7 7-7"
                 />
               </svg>
             </button>
+
+            <div className="flex-1 min-w-0">
+              {selectedNutrient ? (
+                <>
+                  <p className="text-base font-bold text-gray-900 dark:text-white truncate">
+                    {selectedNutrient.label}
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                    Desglose por ingrediente
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-base font-bold text-gray-900 dark:text-white">
+                    Análisis Nutricional
+                  </p>
+                  {(patientName || date) && (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                      {[patientName, date].filter(Boolean).join(" · ")}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Close always visible */}
+            {selectedNutrient && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-2 rounded-xl text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0"
+                aria-label="Cerrar"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* ── Scrollable content ──────────────────────────────────── */}
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto overscroll-contain"
+        >
+          {selectedNutrient ? (
+            /* ── Detail view ─────────────────────────────────────── */
+            <DetailView
+              day={day}
+              nutrient={selectedNutrient}
+              compliance={compliance[selectedNutrient.key]}
+              consumed={contributions[selectedNutrient.key]}
+              required={requirements[selectedNutrient.key]}
+              mealColorMap={mealColorMap}
+              mealDotMap={mealDotMap}
+            />
+          ) : (
+            /* ── Overview ───────────────────────────────────────── */
+            <>
+              {/* Quick stats */}
+              <QuickStats day={day} />
+
+              {/* NOVA bar */}
+              <NovaBar day={day} />
+
+              {/* Hint */}
+              <div className="px-4 mb-2">
+                <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
+                  Selecciona un nutriente para ver qué lo aportó
+                </p>
+              </div>
+
+              {/* Category tabs */}
+              <div
+                ref={tabsRef}
+                className="flex gap-2 overflow-x-auto px-4 pb-2 mb-1 scrollbar-none"
+                style={{ WebkitOverflowScrolling: "touch" }}
+              >
+                {CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setActiveCategoryId(cat.id)}
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-sm font-semibold transition-all duration-150 ${
+                      activeCategoryId === cat.id
+                        ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-sm"
+                        : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700"
+                    }`}
+                  >
+                    <span>{cat.emoji}</span>
+                    <span>{cat.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Nutrient list */}
+              <div className="mx-4 mb-8 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 overflow-hidden">
+                {/* Category header */}
+                <div
+                  className={`px-4 py-3 border-b border-gray-100 dark:border-gray-800 ${activeCategory.accentBg}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">{activeCategory.emoji}</span>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">
+                      {activeCategory.label}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Nutrient rows */}
+                {(() => {
+                  const visibleNutrients = activeCategory.nutrients.filter(
+                    (n) => {
+                      const consumed = contributions[n.key];
+                      const req = requirements[n.key];
+                      const comp = compliance[n.key];
+                      return (
+                        (consumed != null && consumed > 0) ||
+                        (comp != null && req != null && (req as number) > 0)
+                      );
+                    },
+                  );
+
+                  if (visibleNutrients.length === 0) {
+                    return (
+                      <div className="px-4 py-10 text-center">
+                        <p className="text-sm text-gray-400 dark:text-gray-500">
+                          Sin datos para esta categoría en este día.
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return activeCategory.nutrients.map((n) => (
+                    <NutrientTile
+                      key={n.key}
+                      nutrient={n}
+                      compliance={compliance[n.key]}
+                      consumed={contributions[n.key]}
+                      required={requirements[n.key]}
+                      onClick={() => setSelectedNutrient(n)}
+                    />
+                  ));
+                })()}
+              </div>
+            </>
           )}
         </div>
       </div>
-
-      {/* ── Scrollable content ──────────────────────────────────── */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto overscroll-contain"
-      >
-        {selectedNutrient ? (
-          /* ── Detail view ─────────────────────────────────────── */
-          <DetailView
-            day={day}
-            nutrient={selectedNutrient}
-            compliance={compliance[selectedNutrient.key]}
-            consumed={contributions[selectedNutrient.key]}
-            required={requirements[selectedNutrient.key]}
-            mealColorMap={mealColorMap}
-            mealDotMap={mealDotMap}
-          />
-        ) : (
-          /* ── Overview ───────────────────────────────────────── */
-          <>
-            {/* Quick stats */}
-            <QuickStats day={day} />
-
-            {/* NOVA bar */}
-            <NovaBar day={day} />
-
-            {/* Hint */}
-            <div className="px-4 mb-2">
-              <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-                Selecciona un nutriente para ver qué lo aportó
-              </p>
-            </div>
-
-            {/* Category tabs */}
-            <div
-              ref={tabsRef}
-              className="flex gap-2 overflow-x-auto px-4 pb-2 mb-1 scrollbar-none"
-              style={{ WebkitOverflowScrolling: "touch" }}
-            >
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setActiveCategoryId(cat.id)}
-                  className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-sm font-semibold transition-all duration-150 ${
-                    activeCategoryId === cat.id
-                      ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-sm"
-                      : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700"
-                  }`}
-                >
-                  <span>{cat.emoji}</span>
-                  <span>{cat.label}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Nutrient list */}
-            <div className="mx-4 mb-8 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 overflow-hidden">
-              {/* Category header */}
-              <div
-                className={`px-4 py-3 border-b border-gray-100 dark:border-gray-800 ${activeCategory.accentBg}`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-base">{activeCategory.emoji}</span>
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">
-                    {activeCategory.label}
-                  </p>
-                </div>
-              </div>
-
-              {/* Nutrient rows */}
-              {(() => {
-                const visibleNutrients = activeCategory.nutrients.filter(
-                  (n) => {
-                    const consumed = contributions[n.key];
-                    const req = requirements[n.key];
-                    const comp = compliance[n.key];
-                    return (
-                      (consumed != null && consumed > 0) ||
-                      (comp != null && req != null && (req as number) > 0)
-                    );
-                  },
-                );
-
-                if (visibleNutrients.length === 0) {
-                  return (
-                    <div className="px-4 py-10 text-center">
-                      <p className="text-sm text-gray-400 dark:text-gray-500">
-                        Sin datos para esta categoría en este día.
-                      </p>
-                    </div>
-                  );
-                }
-
-                return activeCategory.nutrients.map((n) => (
-                  <NutrientTile
-                    key={n.key}
-                    nutrient={n}
-                    compliance={compliance[n.key]}
-                    consumed={contributions[n.key]}
-                    required={requirements[n.key]}
-                    onClick={() => setSelectedNutrient(n)}
-                  />
-                ));
-              })()}
-            </div>
-          </>
-        )}
-      </div>
-    </div>
+    </ModalPortal>
   );
 };
 

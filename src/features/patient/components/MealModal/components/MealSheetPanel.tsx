@@ -1,10 +1,11 @@
-import React, { useRef, useEffect } from "react";
+import React from "react";
 import type { SerializedMeal } from "../../../../../types/medicalApiTypes";
 import type { IngredientInput } from "../types";
 import { MacroRingsHeader } from "./MacroRingsHeader";
 import { IngredientsList } from "./IngredientsList";
 import { SuggestionBar } from "./SuggestionBar";
 import { SearchFooter } from "./SearchFooter";
+import { ModalSheet } from "../../../../../components/ui/ModalSheet";
 
 interface MacroCurrent {
   protein: number;
@@ -70,211 +71,139 @@ export const MealSheetPanel: React.FC<MealSheetPanelProps> = ({
   onSave,
   onLoadTemplate,
 }) => {
-  const startY = useRef<number | null>(null);
-  const currentY = useRef<number>(0);
-  const sheetRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      if (sheetRef.current) {
-        sheetRef.current.style.transform = "";
-      }
-    }
-  }, [isOpen]);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    startY.current = e.touches[0].clientY;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (startY.current === null) return;
-    const deltaY = e.touches[0].clientY - startY.current;
-    if (deltaY > 0) {
-      currentY.current = deltaY;
-      if (sheetRef.current) {
-        sheetRef.current.style.transform = `translateY(${deltaY}px)`;
-      }
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (currentY.current > 100) {
-      onClose();
-    } else {
-      if (sheetRef.current) {
-        sheetRef.current.style.transform = "";
-      }
-    }
-    startY.current = null;
-    currentY.current = 0;
-  };
-
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-end">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Sheet */}
-      <div
-        ref={sheetRef}
-        className="relative w-full bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl max-h-[92vh] flex flex-col transition-transform duration-200"
-      >
-        {/* Handle */}
-        <div
-          className="flex justify-center pt-3 pb-1 flex-shrink-0 cursor-grab active:cursor-grabbing"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          <div
-            className="w-10 h-1.5 rounded-full bg-gray-300 dark:bg-gray-700"
-            title="Desliza hacia abajo para cerrar"
-          />
+    <ModalSheet isOpen={isOpen} onClose={onClose} maxHeightClass="max-h-[92vh]">
+      {/* Header row */}
+      <div className="flex items-start justify-between px-4 pb-2 flex-shrink-0">
+        <div className="min-w-0 flex-1 pt-0.5">
+          <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 dark:text-gray-500 mb-0.5">
+            Editando plato
+          </p>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white truncate leading-tight">
+            {meal.meal_name}
+          </h2>
         </div>
-
-        {/* Header row */}
-        <div
-          className="flex items-start justify-between px-4 pb-2 flex-shrink-0"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          <div className="min-w-0 flex-1 pt-0.5">
-            <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 dark:text-gray-500 mb-0.5">
-              Editando plato
-            </p>
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white truncate leading-tight">
-              {meal.meal_name}
-            </h2>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-            {/* Templates button */}
-            <button
-              type="button"
-              onClick={onLoadTemplate}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-100 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors shadow-sm"
-              title="Cargar desde plato anterior"
-            >
-              <svg
-                className="w-3.5 h-3.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2.5}
-                  d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"
-                />
-              </svg>
-              Plantillas
-            </button>
-            {/* Close button */}
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-2 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              aria-label="Cerrar"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Macro rings */}
-        <div className="bg-gray-50/50 dark:bg-gray-800/20 mx-2 rounded-2xl mb-1">
-          <MacroRingsHeader
-            pendingNutrition={pendingNutrition}
-            dayBase={dayBase}
-            dayTargets={dayTargets}
-          />
-        </div>
-
-        {/* Ingredients list (scrollable) */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 min-h-0">
-          <IngredientsList
-            ingredients={ingredients}
-            onEdit={onEditIngredient}
-            onDelete={onDeleteIngredient}
-          />
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div className="mx-4 mb-2 px-3 py-2 bg-red-50 dark:bg-red-950/30 rounded-xl flex-shrink-0">
-            <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
-          </div>
-        )}
-
-        {/* Suggestion bar */}
-        <SuggestionBar suggestions={suggestions} onSelect={onSuggestionClick} />
-
-        {/* Search input footer */}
-        <SearchFooter
-          query={searchQuery}
-          onQueryChange={onSearchQueryChange}
-          onOpenSearch={onOpenSearch}
-        />
-
-        {/* Save bar */}
-        <div className="px-4 pt-2 pb-safe-bottom flex-shrink-0 border-t border-gray-100 dark:border-gray-800">
+        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+          {/* Templates button */}
           <button
             type="button"
-            onClick={onSave}
-            disabled={saving}
-            className={`w-full py-3 rounded-xl font-semibold text-sm transition-colors ${
-              hasChanges
-                ? "bg-green-600 hover:bg-green-700 text-white"
-                : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
+            onClick={onLoadTemplate}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-100 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors shadow-sm"
+            title="Cargar desde plato anterior"
           >
-            {saving ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24">
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="none"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                  />
-                </svg>
-                Guardando...
-              </span>
-            ) : hasChanges ? (
-              "Guardar cambios"
-            ) : (
-              "Cerrar"
-            )}
+            <svg
+              className="w-3.5 h-3.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"
+              />
+            </svg>
+            Plantillas
+          </button>
+          {/* Close button */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            aria-label="Cerrar"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
           </button>
         </div>
       </div>
-    </div>
+
+      {/* Macro rings */}
+      <div className="bg-gray-50/50 dark:bg-gray-800/20 mx-2 rounded-2xl mb-1">
+        <MacroRingsHeader
+          pendingNutrition={pendingNutrition}
+          dayBase={dayBase}
+          dayTargets={dayTargets}
+        />
+      </div>
+
+      {/* Ingredients list (scrollable) */}
+      <div className="flex-1 overflow-y-auto px-4 py-3 min-h-0">
+        <IngredientsList
+          ingredients={ingredients}
+          onEdit={onEditIngredient}
+          onDelete={onDeleteIngredient}
+        />
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div className="mx-4 mb-2 px-3 py-2 bg-red-50 dark:bg-red-950/30 rounded-xl flex-shrink-0">
+          <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+        </div>
+      )}
+
+      {/* Suggestion bar */}
+      <SuggestionBar suggestions={suggestions} onSelect={onSuggestionClick} />
+
+      {/* Search input footer */}
+      <SearchFooter
+        query={searchQuery}
+        onQueryChange={onSearchQueryChange}
+        onOpenSearch={onOpenSearch}
+      />
+
+      {/* Save bar */}
+      <div className="px-4 pt-2 pb-safe-bottom flex-shrink-0 border-t border-gray-100 dark:border-gray-800">
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={saving}
+          className={`w-full py-3 rounded-xl font-semibold text-sm transition-colors ${
+            hasChanges
+              ? "bg-green-600 hover:bg-green-700 text-white"
+              : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+          } disabled:opacity-50 disabled:cursor-not-allowed`}
+        >
+          {saving ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24">
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
+              </svg>
+              Guardando...
+            </span>
+          ) : hasChanges ? (
+            "Guardar cambios"
+          ) : (
+            "Cerrar"
+          )}
+        </button>
+      </div>
+    </ModalSheet>
   );
 };

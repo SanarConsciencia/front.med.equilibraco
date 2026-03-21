@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import type { CustomerFood } from "../../../../../types/intakeCrudTypes";
 import * as foodsService from "../../../../../services/foodsService";
+import { ModalSheet } from "../../../../../components/ui/ModalSheet";
 
 interface IngredientModalProps {
   isOpen: boolean;
@@ -99,14 +100,14 @@ export const IngredientModal: React.FC<IngredientModalProps> = ({
   const weightStep = weight < 10 ? 1 : 10;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div
-        className="absolute inset-0 bg-black/60"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      <div className="relative w-full sm:max-w-sm bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-3xl shadow-xl flex flex-col overflow-hidden max-h-[90vh]">
+    <ModalSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      zClass="z-[70]"
+      centerOnDesktop
+      maxHeightClass="max-h-[90vh]"
+    >
+      <div className="flex flex-col overflow-hidden">
         <div className="px-6 pt-6 pb-4 flex items-start justify-between">
           <div className="min-w-0 flex-1">
             <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5 uppercase tracking-wide">
@@ -368,6 +369,6 @@ export const IngredientModal: React.FC<IngredientModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </ModalSheet>
   );
 };
