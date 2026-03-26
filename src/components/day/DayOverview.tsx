@@ -36,9 +36,11 @@ function badgeClasses(compliance: number): string {
 
 const diiTextColor = (dii: number | null | undefined): string => {
   if (dii == null) return "text-gray-500 dark:text-gray-400";
-  if (dii <= -1) return "text-green-600 dark:text-green-400";
-  if (dii >= 1) return "text-red-600 dark:text-red-400";
-  return "text-yellow-600 dark:text-yellow-400";
+  if (dii < -2.36) return "text-emerald-600 dark:text-emerald-400"; // p25: fuerte antiinflamatorio
+  if (dii < 0.23) return "text-green-600 dark:text-green-400"; // mediana: moderada antiinflamatoria
+  if (dii < 1.9) return "text-yellow-600 dark:text-yellow-400"; // p75: neutro
+  if (dii < 4.0) return "text-orange-600 dark:text-orange-400"; // p90: moderada proinflamatoria
+  return "text-red-600 dark:text-red-400"; // >p90: fuerte proinflamatoria
 };
 
 // ─── nutrient row ────────────────────────────────────────────
@@ -75,8 +77,8 @@ const NutrientRow: React.FC<NutrientRowProps> = ({
   const statusLabel = (() => {
     if (pct === null || !hasCompliance) return null;
     const req = required as number;
-    const cons = consumed as number ?? 0;
-    
+    const cons = (consumed as number) ?? 0;
+
     if (pct < 90) {
       const missing = req - cons;
       return {
@@ -93,7 +95,7 @@ const NutrientRow: React.FC<NutrientRowProps> = ({
     }
     return {
       text: "✓ balanceado",
-      cls: "text-green-600 dark:text-green-400"
+      cls: "text-green-600 dark:text-green-400",
     };
   })();
 
@@ -191,12 +193,12 @@ const CATEGORIES: CategorySection[] = [
       {
         key: "trans_fats_g",
         label: "Grasas trans",
-        unit: "g"
+        unit: "g",
       },
       {
         key: "cholesterol_mg",
         label: "Colesterol",
-        unit: "mg"
+        unit: "mg",
       },
     ],
   },
@@ -447,8 +449,12 @@ const MACRO_QUICK = [
 
 const DayOverview: React.FC<DayOverviewProps> = ({ day }) => {
   const overall = day.compliance.overall;
-  const dii = day.inflammatory_analysis?.day_dii;
-  const diiText = day.inflammatory_analysis?.dii_interpretation;
+  const dii =
+    day.inflammatory_analysis?.inflamitis_score ??
+    day.inflammatory_analysis?.day_dii;
+  const diiText =
+    day.inflammatory_analysis?.inflamitis_interpretation ??
+    day.inflammatory_analysis?.dii_interpretation;
   const meals = day.day.meals ?? [];
 
   const compliance = (day.compliance?.total ?? {}) as unknown as Record<
@@ -546,10 +552,19 @@ const DayOverview: React.FC<DayOverviewProps> = ({ day }) => {
             const statusLabel =
               required && required > 0
                 ? pct < 90
-                  ? { text: `↓ falta ${fmtVal(Math.abs(diff))}`, cls: "text-red-500 dark:text-red-400" }
+                  ? {
+                      text: `↓ falta ${fmtVal(Math.abs(diff))}`,
+                      cls: "text-red-500 dark:text-red-400",
+                    }
                   : pct > 110
-                    ? { text: `↑ exceso ${fmtVal(diff)}`, cls: "text-orange-500 dark:text-orange-400" }
-                    : { text: "✓ balan.", cls: "text-green-600 dark:text-green-400 text-[8px]" }
+                    ? {
+                        text: `↑ exceso ${fmtVal(diff)}`,
+                        cls: "text-orange-500 dark:text-orange-400",
+                      }
+                    : {
+                        text: "✓ balan.",
+                        cls: "text-green-600 dark:text-green-400 text-[8px]",
+                      }
                 : null;
 
             return (
@@ -565,7 +580,9 @@ const DayOverview: React.FC<DayOverviewProps> = ({ day }) => {
                   {unit}
                 </p>
                 {statusLabel && (
-                  <p className={`text-[9px] font-bold mt-0.5 ${statusLabel.cls} leading-none whitespace-nowrap`}>
+                  <p
+                    className={`text-[9px] font-bold mt-0.5 ${statusLabel.cls} leading-none whitespace-nowrap`}
+                  >
                     {statusLabel.text}
                   </p>
                 )}

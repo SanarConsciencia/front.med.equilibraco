@@ -40,35 +40,55 @@ interface Contributor {
 
 const CATEGORIES: CategoryDef[] = [
   {
-    id: "macros",
-    label: "Macros",
+    id: "proteins",
+    label: "Proteínas",
     emoji: "🥩",
-    accentBg: "bg-violet-50 dark:bg-violet-900/20",
+    accentBg: "bg-red-50 dark:bg-red-900/20",
     nutrients: [
       { key: "proteins_g", label: "Proteínas", unit: "g", hasCompliance: true },
+    ],
+  },
+  {
+    id: "carbs",
+    label: "Carbohidratos",
+    emoji: "🍞",
+    accentBg: "bg-amber-50 dark:bg-amber-900/20",
+    nutrients: [
       {
         key: "carbs_g",
         label: "Carbohidratos",
         unit: "g",
         hasCompliance: true,
       },
+      { key: "starches_g", label: "Almidones", unit: "g", hasCompliance: true },
+      { key: "sugars_g", label: "Azúcares", unit: "g", hasCompliance: true },
+      { key: "fiber_g", label: "Fibra total", unit: "g", hasCompliance: true },
       {
-        key: "fats_g",
-        label: "Grasas totales",
+        key: "fiber_soluble_g",
+        label: "Fibra soluble",
         unit: "g",
         hasCompliance: true,
       },
-      { key: "fiber_g", label: "Fibra total", unit: "g", hasCompliance: true },
-      { key: "sugars_g", label: "Azúcares", unit: "g", hasCompliance: true },
-      { key: "starches_g", label: "Almidones", unit: "g", hasCompliance: true },
+      {
+        key: "fiber_insoluble_g",
+        label: "Fibra insoluble",
+        unit: "g",
+        hasCompliance: true,
+      },
     ],
   },
   {
     id: "fats",
     label: "Grasas",
     emoji: "🧈",
-    accentBg: "bg-amber-50 dark:bg-amber-900/20",
+    accentBg: "bg-yellow-50 dark:bg-yellow-900/20",
     nutrients: [
+      {
+        key: "fats_g",
+        label: "Grasas totales",
+        unit: "g",
+        hasCompliance: true,
+      },
       {
         key: "sfa_g",
         label: "Saturadas (AGS)",
@@ -116,26 +136,6 @@ const CATEGORIES: CategoryDef[] = [
         label: "Colesterol",
         unit: "mg",
         hasCompliance: false,
-      },
-    ],
-  },
-  {
-    id: "fiber",
-    label: "Fibra",
-    emoji: "🌾",
-    accentBg: "bg-green-50 dark:bg-green-900/20",
-    nutrients: [
-      {
-        key: "fiber_soluble_g",
-        label: "Fibra soluble",
-        unit: "g",
-        hasCompliance: true,
-      },
-      {
-        key: "fiber_insoluble_g",
-        label: "Fibra insoluble",
-        unit: "g",
-        hasCompliance: true,
       },
     ],
   },
@@ -357,33 +357,52 @@ function complianceRingColor(c: number): string {
 function diiChipStyle(dii: number | null | undefined): string {
   if (dii == null)
     return "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400";
-  if (dii <= -1)
+  if (dii < -2.36)
+    return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300";
+  if (dii < 0.23)
     return "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300";
-  if (dii >= 1)
-    return "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300";
-  return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300";
+  if (dii < 1.9)
+    return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300";
+  if (dii < 4.0)
+    return "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300";
+  return "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300";
 }
 
-function diiLabel(dii: number | null | undefined): string {
+function diiLabel(
+  dii: number | null | undefined,
+  interpretation?: string | null,
+): string {
+  if (interpretation) {
+    // Convertir snake_case del API a texto legible si es necesario
+    return interpretation
+      .replace(/_/g, " ")
+      .replace(/^\w/, (c) => c.toUpperCase());
+  }
   if (dii == null) return "Sin datos";
-  if (dii <= -2) return "Muy anti-inflamatorio";
-  if (dii <= -1) return "Anti-inflamatorio";
-  if (dii >= 2) return "Muy pro-inflamatorio";
-  if (dii >= 1) return "Pro-inflamatorio";
-  return "Neutro";
+  if (dii < -2.36) return "Fuerte anti-inflamatorio"; // < p25
+  if (dii < 0.23) return "Moderada anti-inflamatoria"; // p25 – mediana
+  if (dii < 1.9) return "Neutro"; // mediana – p75
+  if (dii < 4.0) return "Moderada pro-inflamatoria"; // p75 – p90
+  return "Fuerte pro-inflamatorio"; // > p90
 }
 
 function getContributors(day: DayAnalysisResponse, key: string): Contributor[] {
   const list: Contributor[] = [];
-  for (const meal of day.contributions.by_meal) {
-    for (const ing of meal.ingredients) {
+  const meals = day.day.meals ?? [];
+
+  for (const contribution of day.contributions.by_meal) {
+    // Intentar encontrar el nombre real del plato en day.day.meals usando el slot_id (que viene en contribution.meal_name)
+    const mealInfo = meals.find((m) => m.slot_id === contribution.meal_name);
+    const displayName = mealInfo?.meal_name || contribution.meal_name;
+
+    for (const ing of contribution.ingredients) {
       const val = (
         ing.nutritional_contribution as unknown as Record<string, unknown>
       )[key];
       const amount = typeof val === "number" && val > 0 ? val : 0;
       if (amount > 0) {
         list.push({
-          mealName: meal.meal_name,
+          mealName: displayName,
           foodName: ing.food_name,
           weightG: ing.weight_g,
           amount,
@@ -598,7 +617,12 @@ function NovaBar({ day }: { day: DayAnalysisResponse }) {
 
 function QuickStats({ day }: { day: DayAnalysisResponse }) {
   const overall = day.compliance.overall;
-  const dii = day.inflammatory_analysis?.day_dii;
+  const dii =
+    day.inflammatory_analysis?.inflamitis_score ??
+    day.inflammatory_analysis?.day_dii;
+  const interpretation =
+    day.inflammatory_analysis?.inflamitis_interpretation ??
+    day.inflammatory_analysis?.dii_interpretation;
   const totalMeals = day.day.meals?.length ?? 0;
   const totalIngredients = day.inflammatory_analysis?.total_ingredients ?? 0;
 
@@ -653,7 +677,7 @@ function QuickStats({ day }: { day: DayAnalysisResponse }) {
         <span
           className={`mt-1.5 self-start text-xs font-semibold px-2 py-0.5 rounded-full ${diiChipStyle(dii)}`}
         >
-          {diiLabel(dii)}
+          {diiLabel(dii, interpretation)}
         </span>
       </div>
 
@@ -819,6 +843,7 @@ function DetailView({
 
             <div className="flex flex-wrap gap-x-4 gap-y-2">
               {mealTotals.map(({ name, total: mt }) => {
+                // El nombre ya viene mapeado desde getContributors -> mealTotals
                 const badgeClass = mealColorMap.get(name) ?? MEAL_PALETTE[0];
                 const pctMeal =
                   contributorTotal > 0 ? (mt / contributorTotal) * 100 : 0;
@@ -947,7 +972,7 @@ const NutriAnalysisPage: React.FC<NutriAnalysisPageProps> = ({
   isOpen,
   onClose,
 }) => {
-  const [activeCategoryId, setActiveCategoryId] = useState<string>("macros");
+  const [activeCategoryId, setActiveCategoryId] = useState<string>("proteins");
   const [selectedNutrient, setSelectedNutrient] = useState<NutrientDef | null>(
     null,
   );
@@ -958,7 +983,7 @@ const NutriAnalysisPage: React.FC<NutriAnalysisPageProps> = ({
   useEffect(() => {
     if (isOpen) {
       setSelectedNutrient(null);
-      setActiveCategoryId("macros");
+      setActiveCategoryId("proteins");
       scrollRef.current?.scrollTo({ top: 0 });
     }
   }, [isOpen]);
@@ -988,9 +1013,15 @@ const NutriAnalysisPage: React.FC<NutriAnalysisPageProps> = ({
   const { mealColorMap, mealDotMap } = useMemo(() => {
     const colorMap = new Map<string, string>();
     const dotMap = new Map<string, string>();
+    const mealsInfo = day.day.meals ?? [];
+
     day.contributions.by_meal.forEach((m, i) => {
-      colorMap.set(m.meal_name, MEAL_PALETTE[i % MEAL_PALETTE.length]);
-      dotMap.set(m.meal_name, MEAL_DOT_COLORS[i % MEAL_DOT_COLORS.length]);
+      // Intentar encontrar el nombre real usando el slot_id (que viene en m.meal_name)
+      const mealInfo = mealsInfo.find((mi) => mi.slot_id === m.meal_name);
+      const displayName = mealInfo?.meal_name || m.meal_name;
+
+      colorMap.set(displayName, MEAL_PALETTE[i % MEAL_PALETTE.length]);
+      dotMap.set(displayName, MEAL_DOT_COLORS[i % MEAL_DOT_COLORS.length]);
     });
     return { mealColorMap: colorMap, mealDotMap: dotMap };
   }, [day]);

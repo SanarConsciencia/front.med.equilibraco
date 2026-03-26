@@ -710,6 +710,19 @@ export interface InflammatoryAnalysis {
   dii_explanation?: string | null;
   dii_recommendations?: string[] | null;
   dii_summary?: DiiSummary | null;
+
+  // New Inflamitis fields
+  inflamitis_score?: number | null;
+  inflamitis_interpretation?: string | null;
+  inflamitis_version?: string | null;
+  inflamitis_coverage_percentage?: number | null;
+  inflamitis_day_completeness_pct?: number | null;
+  inflamitis_day_completeness_status?: string | null;
+  inflamitis_improvement_potential?: number | null;
+  inflamitis_drivers_increase?: string[] | null;
+  inflamitis_drivers_decrease?: string[] | null;
+  inflamitis_breakdown?: any[] | null;
+
   projection_explanation?: string | null;
   projected_dii_score?: number | null;
   projected_interpretation?: string | null;
