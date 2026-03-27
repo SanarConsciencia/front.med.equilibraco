@@ -1,5 +1,5 @@
 // Basic service worker for PWA - cache strategy: network first, cache fallback
-const CACHE_NAME = "equilibraco-v1";
+const CACHE_NAME = "equilibraco-v2";
 const urlsToCache = ["/", "/index.html"];
 
 self.addEventListener("install", (event) => {
