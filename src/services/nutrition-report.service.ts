@@ -248,12 +248,19 @@ function buildMealBreakdown(
       primaryKey
     ] ?? 0;
 
+  // Build slot_id → meal_name lookup from the actual meals list
+  const slotToName = new Map<string, string>();
+  for (const m of day.day.meals ?? []) {
+    if (m.slot_id) slotToName.set(m.slot_id, m.meal_name);
+  }
+
   return day.contributions.by_meal
     .map((meal) => {
       const contribution =
         (meal.totals as unknown as Record<string, number>)[primaryKey] ?? 0;
+      const resolvedName = slotToName.get(meal.meal_name) ?? meal.meal_name;
       return {
-        meal_name: meal.meal_name,
+        meal_name: resolvedName,
         meal_time: null, // meal_time no viene en contributions
         contribution: Math.round(contribution * 10) / 10,
         unit,
