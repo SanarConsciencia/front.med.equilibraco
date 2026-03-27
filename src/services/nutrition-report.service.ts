@@ -535,11 +535,29 @@ export async function requestNutritionReport(
     date,
   );
 
-  const response = await fetch(`${KIWI_PDF_URL}/reports/nutrition`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  // 90s timeout — PDF generation (WeasyPrint + charts + photo fetching) can take 30-60s.
+  // Railway's default proxy timeout is 30s; if it's been raised to 120s this gives enough headroom.
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 90_000);
+
+  let response: Response;
+  try {
+    response = await fetch(`${KIWI_PDF_URL}/reports/nutrition`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error(
+        "La generación del reporte tardó demasiado (>90s). Revisa los logs del servidor o intenta nuevamente.",
+      );
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     const rawBody = await response.text().catch(() => "");
