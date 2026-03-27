@@ -26,7 +26,7 @@ export interface FoodProperties {
   is_vegan?: boolean;
   is_vegetarian?: boolean;
   nova_classification?: number;
-  [key: string]: any; // Para propiedades adicionales
+  [key: string]: unknown; // Para propiedades adicionales
 }
 
 /**

@@ -2,7 +2,12 @@ import React, { useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { usePatientDayStore } from "../stores/patientDayStore";
 import { usePatientFoodsStore } from "../stores/patientFoodsStore";
+import { useAppStore } from "../stores/appStore";
 import { usePatientData } from "../hooks/usePatientData";
+import {
+  requestNutritionReport,
+  downloadBlob,
+} from "../services/nutrition-report.service";
 import { todayColombia } from "../utils/date";
 import type { Customer } from "../services/api";
 import type { SerializedMeal } from "../types/medicalApiTypes";
@@ -33,6 +38,7 @@ const PatientDayPage: React.FC = () => {
   const [editingMeal, setEditingMeal] = useState<SerializedMeal | null>(null);
   const [creatingDay, setCreatingDay] = useState(false);
   const [nutriAnalysisOpen, setNutriAnalysisOpen] = useState(false);
+  const [generatingReport, setGeneratingReport] = useState(false);
 
   // Initialize data
   usePatientData(uuid, date);
@@ -53,6 +59,7 @@ const PatientDayPage: React.FC = () => {
   const loadDay = usePatientDayStore((s) => s.loadDay);
 
   const adjustServing = usePatientFoodsStore((s) => s.adjustServing);
+  const doctor = useAppStore((s) => s.user);
 
   const handleDateChange = (newDate: string) => {
     setDate(newDate);
@@ -97,6 +104,29 @@ const PatientDayPage: React.FC = () => {
     setMealFormOpen(true);
   };
 
+  const handleGenerateReport = async () => {
+    if (!day || !doctor || !customer) return;
+    setGeneratingReport(true);
+    try {
+      const blob = await requestNutritionReport(
+        day,
+        doctor,
+        {
+          nombre: customer.customer_full_name,
+          email: customer.customer_email,
+          subscription_status: customer.subscription_status,
+          avatar_url: null,
+        },
+        date,
+      );
+      downloadBlob(blob, `reporte-${customer.customer_full_name}-${date}.pdf`);
+    } catch (err) {
+      console.error("Error generando reporte:", err);
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
+
   if (!uuid) {
     return (
       <div className="flex items-center justify-center min-h-screen text-gray-500 dark:text-gray-400">
@@ -139,6 +169,39 @@ const PatientDayPage: React.FC = () => {
             </p>
           )}
         </div>
+        {day && doctor && customer && (
+          <button
+            type="button"
+            onClick={handleGenerateReport}
+            disabled={generatingReport}
+            className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-medium rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex-shrink-0"
+            aria-label="Generar reporte PDF"
+          >
+            {generatingReport ? (
+              <>
+                <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white" />
+                Generando...
+              </>
+            ) : (
+              <>
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+                Reporte PDF
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-4 pb-10">

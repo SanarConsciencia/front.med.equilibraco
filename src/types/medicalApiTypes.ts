@@ -15,7 +15,7 @@ export interface NutritionalProperties {
   fat_per_100g?: number;
   fiber_per_100g?: number;
   // Additional dynamic properties
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface PatternMetadata {
@@ -23,7 +23,7 @@ export interface PatternMetadata {
   name?: string;
   description?: string;
   // Additional pattern fields that may vary
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface SerializedDayIntake {
@@ -39,7 +39,7 @@ export interface SerializedDayIntake {
   created_at: string; // ISO datetime string
   updated_at?: string | null; // ISO datetime string
   // Additional fields that might be included in serialized response
-  [key: string]: any; // For flexibility with additional dynamic fields
+  [key: string]: unknown; // For flexibility with additional dynamic fields
 }
 
 // Serialized meal & ingredient types (from example payload)
@@ -55,7 +55,7 @@ export interface SerializedMeal {
   ingredients?: SerializedMealIngredient[];
   media?: MealMedia | null;
   // allow extra fields for forward compatibility
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface SerializedMealIngredient {
@@ -64,7 +64,7 @@ export interface SerializedMealIngredient {
   food_name: string;
   quantity?: number | null; // units are in `unit` field
   unit?: string | null; // e.g. "g", "ml", "porción"
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -721,7 +721,7 @@ export interface InflammatoryAnalysis {
   inflamitis_improvement_potential?: number | null;
   inflamitis_drivers_increase?: string[] | null;
   inflamitis_drivers_decrease?: string[] | null;
-  inflamitis_breakdown?: any[] | null;
+  inflamitis_breakdown?: unknown[] | null;
 
   projection_explanation?: string | null;
   projected_dii_score?: number | null;
@@ -1005,7 +1005,7 @@ export interface IngredientConsumption {
   category_totals: Record<string, CategoryTotal>;
   healthy_ingredients: IngredientDetail[];
   processed_ingredients: IngredientDetail[];
-  usage_intensity: Record<string, any>;
+  usage_intensity: Record<string, unknown>;
   shopping_recommendations: string[];
   recommendation: string;
   message?: string | null;
