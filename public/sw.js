@@ -1,5 +1,5 @@
 // Basic service worker for PWA - cache strategy: network first, cache fallback
-const CACHE_NAME = "equilibraco-v2";
+const CACHE_NAME = "equilibraco-v3";
 const urlsToCache = ["/", "/index.html"];
 
 self.addEventListener("install", (event) => {
@@ -27,10 +27,15 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  // Skip non-GET requests and cross-origin API calls — let the browser handle them directly.
-  // This prevents the SW from intercepting binary responses (e.g. PDF blobs) that it
-  // cannot cache, which would strip CORS headers and cause a network error.
   const url = event.request.url;
+
+  // Never intercept requests to the PDF generator — the SW cannot re-deliver
+  // cross-origin binary responses with CORS headers intact, causing ERR_FAILED.
+  if (url.includes("kiwi-pdf-equilibaco.up.railway.app")) {
+    return; // browser handles this fetch natively, CORS headers preserved
+  }
+
+  // Skip non-GET requests and any other cross-origin calls for the same reason.
   if (event.request.method !== "GET" || !url.startsWith(self.location.origin)) {
     return;
   }
