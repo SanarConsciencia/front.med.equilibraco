@@ -21,10 +21,7 @@ import type {
   ReportInsightItem,
   WeeklyScorePoint,
 } from "../types/nutrition-report.types";
-import {
-  NUTRIENT_GROUPS,
-  INSIGHT_KEY_TO_GROUP,
-} from "../types/nutrition-report.types";
+import { NUTRIENT_GROUPS } from "../types/nutrition-report.types";
 
 // ============================================================================
 // TIPOS DE LAS APIS EXTERNAS
@@ -109,69 +106,6 @@ function avg(values: (number | null)[]): number | null {
   const valid = values.filter((v): v is number => v !== null);
   if (valid.length === 0) return null;
   return valid.reduce((a, b) => a + b, 0) / valid.length;
-}
-
-/**
- * Construye el índice de insights por grupo de nutriente.
- * Cada InsightItem se asigna al grupo correspondiente
- * usando INSIGHT_KEY_TO_GROUP.
- */
-function buildInsightIndex(
-  insights: InsightItem[],
-): Map<NutrientGroupKey, InsightItem[]> {
-  const index = new Map<NutrientGroupKey, InsightItem[]>();
-
-  for (const item of insights) {
-    if (!item.nutrient) continue;
-    const group = INSIGHT_KEY_TO_GROUP[item.nutrient];
-    if (!group) continue;
-
-    const existing = index.get(group) ?? [];
-    existing.push(item);
-    index.set(group, existing);
-  }
-
-  return index;
-}
-
-/**
- * Selecciona el insight semanal (prioridad 3-6) y la alerta
- * (prioridad 1-2) para un grupo dado desde el índice.
- */
-function pickInsightsForGroup(
-  index: Map<NutrientGroupKey, InsightItem[]>,
-  group: NutrientGroupKey,
-): {
-  weekly_insight: ReportInsightItem | null;
-  alert: ReportInsightItem | null;
-} {
-  const items = index.get(group) ?? [];
-  const sorted = [...items].sort((a, b) => a.priority - b.priority);
-
-  const alertItem = sorted.find((i) => i.priority <= 2) ?? null;
-  const insightItem = sorted.find((i) => i.priority >= 3) ?? null;
-
-  const toReport = (i: InsightItem | null): ReportInsightItem | null =>
-    i
-      ? {
-          priority: i.priority,
-          insight_type: i.insight_type,
-          nutrient: i.nutrient,
-          nutrient_label: i.nutrient_label,
-          days_count: i.days_count,
-          avg_compliance: i.avg_compliance,
-          severity: i.severity,
-          headline: i.headline,
-          body: i.body,
-          symptom_connection: i.symptom_connection,
-          has_user_signal: i.has_user_signal,
-        }
-      : null;
-
-  return {
-    weekly_insight: toReport(insightItem),
-    alert: toReport(alertItem),
-  };
 }
 
 /**
@@ -277,7 +211,6 @@ function buildMealBreakdown(
 function buildNutrientGroup(
   groupKey: NutrientGroupKey,
   day: DayAnalysisResponse,
-  insightIndex: Map<NutrientGroupKey, InsightItem[]>,
 ): ReportNutrientGroup {
   const config = NUTRIENT_GROUPS[groupKey];
   const isBioactive = groupKey === "bioactives";
@@ -335,11 +268,6 @@ function buildNutrientGroup(
 
   const meal_breakdown = buildMealBreakdown(day, primaryKey, primaryUnit);
 
-  const { weekly_insight, alert } = pickInsightsForGroup(
-    insightIndex,
-    groupKey,
-  );
-
   return {
     group: groupKey,
     group_label: config.label,
@@ -347,8 +275,6 @@ function buildNutrientGroup(
     sub_nutrients,
     top_foods,
     meal_breakdown,
-    weekly_insight,
-    alert,
   };
 }
 
@@ -415,8 +341,22 @@ function buildReportPayload(
     weekly_scores: weeklyScores,
   };
 
-  // ── Insights indexados por grupo ──────────────────────────────────────
-  const insightIndex = buildInsightIndex(insights.insights);
+  // ── Insights semanales — lista plana ordenada por prioridad ──────────
+  const insightsList: ReportInsightItem[] = [...insights.insights]
+    .sort((a, b) => a.priority - b.priority)
+    .map((i) => ({
+      priority: i.priority,
+      insight_type: i.insight_type,
+      nutrient: i.nutrient,
+      nutrient_label: i.nutrient_label,
+      days_count: i.days_count,
+      avg_compliance: i.avg_compliance,
+      severity: i.severity,
+      headline: i.headline,
+      body: i.body,
+      symptom_connection: i.symptom_connection,
+      has_user_signal: i.has_user_signal,
+    }));
 
   // ── Grupos de nutrientes ──────────────────────────────────────────────
   const groupKeys: NutrientGroupKey[] = [
@@ -430,9 +370,7 @@ function buildReportPayload(
     "bioactives",
   ];
 
-  const nutrients = groupKeys.map((key) =>
-    buildNutrientGroup(key, day, insightIndex),
-  );
+  const nutrients = groupKeys.map((key) => buildNutrientGroup(key, day));
 
   // ── Estado inflamatorio ───────────────────────────────────────────────
   const inflammatory = {
@@ -498,6 +436,7 @@ function buildReportPayload(
     report_date: date,
     summary,
     nutrients,
+    insights: insightsList,
     inflammatory,
     meals,
     medical_feedback,

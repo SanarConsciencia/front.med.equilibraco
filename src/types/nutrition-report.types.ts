@@ -113,14 +113,10 @@ export interface ReportNutrientGroup {
   // null para bioactivos (no tienen requerimiento definido).
   group_score: number | null;
   sub_nutrients: ReportSubNutrient[];
-  // Top 5 ingredientes por contribución al grupo principal
+  // Top 6 ingredientes por contribución al grupo principal
   top_foods: ReportTopFood[];
   // Aporte al grupo desglosado por plato del día
   meal_breakdown: ReportMealBreakdown[];
-  // Insight semanal si existe para algún nutriente del grupo
-  weekly_insight: ReportInsightItem | null;
-  // Alerta de prioridad alta (1-2) si existe para el grupo
-  alert: ReportInsightItem | null;
 }
 
 // ============================================================================
@@ -185,6 +181,8 @@ export interface NutritionReportPayload {
   report_date: string; // YYYY-MM-DD
   summary: ReportSummary;
   nutrients: ReportNutrientGroup[];
+  // Lista de insights semanales ordenada por prioridad (1 = más urgente)
+  insights: ReportInsightItem[];
   inflammatory: ReportInflammatory;
   meals: ReportMeal[];
   medical_feedback: ReportMedicalFeedback | null;
