@@ -75,7 +75,7 @@ const INTAKE_BASE =
   (import.meta.env.VITE_INTAKE_API_URL as string | undefined) ??
   "https://api.intake.equilibraco.com";
 
-const TOP_FOODS_LIMIT = 5;
+const TOP_FOODS_LIMIT = 6;
 
 // ============================================================================
 // LLAMADAS A APIS
