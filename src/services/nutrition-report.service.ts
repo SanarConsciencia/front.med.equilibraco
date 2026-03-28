@@ -422,6 +422,8 @@ function buildReportPayload(
   const groupKeys: NutrientGroupKey[] = [
     "proteins",
     "carbs",
+    "sugars",
+    "fibers",
     "fats",
     "minerals",
     "vitamins",

@@ -99,6 +99,8 @@ export interface ReportInsightItem {
 export type NutrientGroupKey =
   | "proteins"
   | "carbs"
+  | "sugars"
+  | "fibers"
   | "fats"
   | "minerals"
   | "vitamins"
@@ -206,28 +208,29 @@ export const NUTRIENT_GROUPS: Record<
 > = {
   proteins: {
     label: "Proteínas",
-    nutrients: [
-      { key: "proteins_g", label: "Proteínas totales", unit: "g" },
-    ],
+    nutrients: [{ key: "proteins_g", label: "Proteínas totales", unit: "g" }],
   },
 
   carbs: {
     label: "Carbohidratos",
     nutrients: [
-      {
-        key: "carbs_g",
-        label: "Carbohidratos totales",
-        unit: "g",
-      },
+      { key: "carbs_g", label: "Carbohidratos totales", unit: "g" },
       { key: "starches_g", label: "Almidones", unit: "g" },
       { key: "sugars_g", label: "Azúcares", unit: "g" },
+    ],
+  },
+
+  sugars: {
+    label: "Azúcares",
+    nutrients: [{ key: "sugars_g", label: "Azúcares totales", unit: "g" }],
+  },
+
+  fibers: {
+    label: "Fibra",
+    nutrients: [
       { key: "fiber_g", label: "Fibra total", unit: "g" },
       { key: "fiber_soluble_g", label: "Fibra soluble", unit: "g" },
-      {
-        key: "fiber_insoluble_g",
-        label: "Fibra insoluble",
-        unit: "g",
-      },
+      { key: "fiber_insoluble_g", label: "Fibra insoluble", unit: "g" },
     ],
   },
 
@@ -322,42 +325,43 @@ export const NUTRIENT_GROUPS: Record<
 // Permite asignar cada InsightItem (por su campo nutrient)
 // al NutrientGroup correcto al construir el payload.
 
-export const INSIGHT_KEY_TO_GROUP: Record<string, NutrientGroupKey> =
-  {
-    // Proteínas
-    proteins_g: "proteins",
+export const INSIGHT_KEY_TO_GROUP: Record<string, NutrientGroupKey> = {
+  // Proteínas
+  proteins_g: "proteins",
 
-    // Carbohidratos
-    carbs_g: "carbs",
-    starches_g: "carbs",
-    sugars_g: "carbs",
-    fiber_g: "carbs",
-    fiber_soluble_g: "carbs",
-    fiber_insoluble_g: "carbs",
+  // Carbohidratos
+  carbs_g: "carbs",
+  starches_g: "carbs",
+  sugars_g: "sugars",
 
-    // Grasas
-    fats_g: "fats",
-    mufa_g: "fats",
-    pufa_g: "fats",
-    sfa_g: "fats",
-    omega_3_ala_g: "fats",
-    omega_3_epa_dha_mg: "fats",
-    omega_6_la_g: "fats",
+  // Fibra
+  fiber_g: "fibers",
+  fiber_soluble_g: "fibers",
+  fiber_insoluble_g: "fibers",
 
-    // Minerales
-    calcium: "minerals",
-    iron: "minerals",
-    magnesium: "minerals",
-    zinc: "minerals",
-    potassium: "minerals",
-    sodium: "minerals",
+  // Grasas
+  fats_g: "fats",
+  mufa_g: "fats",
+  pufa_g: "fats",
+  sfa_g: "fats",
+  omega_3_ala_g: "fats",
+  omega_3_epa_dha_mg: "fats",
+  omega_6_la_g: "fats",
 
-    // Vitaminas
-    vitamin_c: "vitamins",
-    vitamin_d: "vitamins",
-    vitamin_b1: "vitamins",
-    vitamin_b2: "vitamins",
-    vitamin_b6: "vitamins",
-    vitamin_b12: "vitamins",
-    folate: "vitamins",
-  };
+  // Minerales
+  calcium: "minerals",
+  iron: "minerals",
+  magnesium: "minerals",
+  zinc: "minerals",
+  potassium: "minerals",
+  sodium: "minerals",
+
+  // Vitaminas
+  vitamin_c: "vitamins",
+  vitamin_d: "vitamins",
+  vitamin_b1: "vitamins",
+  vitamin_b2: "vitamins",
+  vitamin_b6: "vitamins",
+  vitamin_b12: "vitamins",
+  folate: "vitamins",
+};
