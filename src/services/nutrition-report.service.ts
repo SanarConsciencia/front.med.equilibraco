@@ -381,8 +381,12 @@ function buildReportPayload(
     };
   });
 
-  const weeklyOverallAvg = avg(scores.overall_scores.map((s) => s.score));
-  const weeklyInflamitisAvg = avg(scores.inflamitis_scores.map((s) => s.score));
+  const weeklyOverallAvg = avg(
+    scores.overall_scores.map((s) => (s.score === 0 ? null : s.score)),
+  );
+  const weeklyInflamitisAvg = avg(
+    scores.inflamitis_scores.map((s) => (s.score === 0 ? null : s.score)),
+  );
   const overallScore = Math.round(day.compliance.overall);
   const deltaVsWeekly =
     weeklyOverallAvg !== null

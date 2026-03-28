@@ -443,6 +443,7 @@ const CategoryAccordion: React.FC<AccordionProps> = ({
 const MACRO_QUICK = [
   { key: "proteins_g", label: "Proteínas", unit: "g" },
   { key: "carbs_g", label: "Carbos", unit: "g" },
+  { key: "sugars_g", label: "Azúcares", unit: "g" },
   { key: "fats_g", label: "Grasas", unit: "g" },
   { key: "fiber_g", label: "Fibra", unit: "g" },
 ] as const;
