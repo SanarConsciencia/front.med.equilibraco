@@ -447,6 +447,60 @@ function buildReportPayload(
 // FUNCIÓN PRINCIPAL — punto de entrada desde la UI
 // ============================================================================
 
+type PatientArg = {
+  nombre: string;
+  email: string;
+  subscription_status: string;
+  avatar_url: string | null;
+};
+
+/**
+ * Construye el payload del reporte sin enviarlo a kiwi-pdf.
+ * Útil para generar el prompt de Claude.
+ */
+export async function buildNutritionPayload(
+  day: DayAnalysisResponse,
+  doctor: MedicoResponse,
+  patient: PatientArg,
+  date: string,
+): Promise<NutritionReportPayload> {
+  const customerId = day.day.customer_id;
+  const [scores, insights] = await Promise.all([
+    fetchWeeklyScores(customerId),
+    fetchInsights(customerId),
+  ]);
+  return buildReportPayload(day, scores, insights, doctor, patient, date);
+}
+
+/**
+ * Construye el texto del prompt listo para pegar en Claude.ai.
+ * Incluye contexto del paciente + el payload completo en JSON.
+ */
+export function buildClaudePromptText(payload: NutritionReportPayload): string {
+  const especialidad = payload.doctor.especialidad ?? "Nutrición";
+  return [
+    `Eres el asistente nutricional del Dr./Dra. ${payload.doctor.nombre_completo} (${especialidad}).`,
+    `Este es el reporte nutricional diario de **${payload.patient.nombre}** correspondiente al **${payload.report_date}**.`,
+    ``,
+    `## Datos del reporte`,
+    `\`\`\`json`,
+    JSON.stringify(payload, null, 2),
+    `\`\`\``,
+    ``,
+    `## Tu tarea`,
+    `Redacta un mensaje personalizado en español para acompañar el reporte PDF que se le enviará a ${payload.patient.nombre}.`,
+    `El mensaje debe:`,
+    `- Ser cálido, motivador y profesional (máx. 250 palabras).`,
+    `- Resaltar el score general del día y su comparativa con el promedio semanal.`,
+    `- Mencionar 1-2 puntos positivos destacados del día.`,
+    `- Señalar 1-2 áreas de mejora de forma constructiva.`,
+    `- Incluir recomendaciones prácticas basadas en los insights del reporte.`,
+    `- Estar listo para copiar y pegar directamente al paciente.`,
+    ``,
+    `No incluyas el JSON en tu respuesta, solo el mensaje final.`,
+  ].join("\n");
+}
+
 /**
  * Orquesta todo el proceso:
  * 1. Llama en paralelo a scores e insights

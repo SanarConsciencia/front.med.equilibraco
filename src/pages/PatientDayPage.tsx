@@ -6,6 +6,8 @@ import { useAppStore } from "../stores/appStore";
 import { usePatientData } from "../hooks/usePatientData";
 import {
   requestNutritionReport,
+  buildNutritionPayload,
+  buildClaudePromptText,
   downloadBlob,
 } from "../services/nutrition-report.service";
 import { todayColombia } from "../utils/date";
@@ -39,6 +41,8 @@ const PatientDayPage: React.FC = () => {
   const [creatingDay, setCreatingDay] = useState(false);
   const [nutriAnalysisOpen, setNutriAnalysisOpen] = useState(false);
   const [generatingReport, setGeneratingReport] = useState(false);
+  const [copyingPrompt, setCopyingPrompt] = useState(false);
+  const [promptCopied, setPromptCopied] = useState(false);
 
   // Initialize data
   usePatientData(uuid, date);
@@ -102,6 +106,32 @@ const PatientDayPage: React.FC = () => {
   const handleOpenEditMeal = (meal: SerializedMeal) => {
     setEditingMeal(meal);
     setMealFormOpen(true);
+  };
+
+  const handleCopyClaudePrompt = async () => {
+    if (!day || !doctor || !customer) return;
+    setCopyingPrompt(true);
+    try {
+      const payload = await buildNutritionPayload(
+        day,
+        doctor,
+        {
+          nombre: customer.customer_full_name,
+          email: customer.customer_email,
+          subscription_status: customer.subscription_status,
+          avatar_url: null,
+        },
+        date,
+      );
+      const text = buildClaudePromptText(payload);
+      await navigator.clipboard.writeText(text);
+      setPromptCopied(true);
+      setTimeout(() => setPromptCopied(false), 2500);
+    } catch (err) {
+      console.error("Error copiando prompt:", err);
+    } finally {
+      setCopyingPrompt(false);
+    }
   };
 
   const handleGenerateReport = async () => {
@@ -170,20 +200,18 @@ const PatientDayPage: React.FC = () => {
           )}
         </div>
         {day && doctor && customer && (
-          <button
-            type="button"
-            onClick={handleGenerateReport}
-            disabled={generatingReport}
-            className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-medium rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex-shrink-0"
-            aria-label="Generar reporte PDF"
-          >
-            {generatingReport ? (
-              <>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              type="button"
+              onClick={handleCopyClaudePrompt}
+              disabled={copyingPrompt}
+              className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-medium rounded-xl bg-violet-600 hover:bg-violet-700 text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              aria-label="Copiar prompt para Claude"
+              title="Copiar prompt para Claude AI"
+            >
+              {copyingPrompt ? (
                 <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white" />
-                Generando...
-              </>
-            ) : (
-              <>
+              ) : promptCopied ? (
                 <svg
                   className="w-3.5 h-3.5"
                   fill="none"
@@ -194,13 +222,58 @@ const PatientDayPage: React.FC = () => {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    d="M5 13l4 4L19 7"
                   />
                 </svg>
-                Reporte PDF
-              </>
-            )}
-          </button>
+              ) : (
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  />
+                </svg>
+              )}
+              {promptCopied ? "¡Copiado!" : "Claude"}
+            </button>
+            <button
+              type="button"
+              onClick={handleGenerateReport}
+              disabled={generatingReport}
+              className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-medium rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              aria-label="Generar reporte PDF"
+            >
+              {generatingReport ? (
+                <>
+                  <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white" />
+                  Generando...
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  Reporte PDF
+                </>
+              )}
+            </button>
+          </div>
         )}
       </div>
 
