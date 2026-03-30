@@ -3,6 +3,7 @@ import AgendaConfig from "../components/agenda/AgendaConfig";
 import BloqueosPanel from "../components/agenda/BloqueosPanel";
 import CitasList from "../components/citas/CitasList";
 import CitasCalendario from "../components/citas/CitasCalendario";
+import GoogleCalendarSettings from '../components/GoogleCalendarSettings'
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -104,11 +105,16 @@ const Agenda: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
               <BloqueosPanel/>
             </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+              <GoogleCalendarSettings />
+            </div>
           </div>
         )}
       </div>
     </div>
   );
+  
 };
 
 export default Agenda;
