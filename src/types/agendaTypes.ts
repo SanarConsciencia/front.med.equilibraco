@@ -12,40 +12,48 @@ export type EstadoCita =
 
 export type TipoBloqueo = 'BLOQUEO' | 'VACACIONES'
 
+export type TipoAgenda = 'ASISTENCIAL' | 'DESCUBRIMIENTO'
+
 // ============================================================
-// AGENDA CONFIG
+// AGENDA CONFIG — REDISEÑADO
 // ============================================================
 
-export interface AgendaConfigResponse {
-  id: number
-  medico_id: string
-  dia_semana: number        // 0=lunes … 6=domingo
-  dia_nombre: string        // "Lunes", "Martes", etc.
-  hora_inicio: string       // "HH:MM"
-  hora_fin: string          // "HH:MM"
-  duraciones_minutos: number[]
-  is_active: boolean
+export interface RangoHorario {
+  inicio: string   // "HH:MM"
+  fin:    string   // "HH:MM"
 }
 
 export interface AgendaConfigCreate {
-  dia_semana: number
-  hora_inicio: string
-  hora_fin: string
-  duraciones_minutos: number[]
-  is_active: boolean
+  dia_semana:       number
+  tipo:             TipoAgenda
+  rangos:           RangoHorario[]
+  duracion_minutos: number
+  buffer_minutos:   number
+  is_active:        boolean
 }
 
-// Estado local del formulario para un día de la semana
+export interface AgendaConfigResponse {
+  id:               number
+  medico_id:        string
+  dia_semana:       number
+  dia_nombre:       string
+  tipo:             TipoAgenda
+  rangos:           RangoHorario[]
+  duracion_minutos: number
+  buffer_minutos:   number
+  is_active:        boolean
+}
+
+// Estado local de formulario para la UI
 export interface DiaAgendaForm {
-  dia_semana: number
-  dia_nombre: string
-  hora_inicio: string
-  hora_fin: string
-  duraciones_minutos: number[]
-  is_active: boolean
-  // helpers UI
-  editando: boolean
-  guardando: boolean
+  dia_semana:       number
+  dia_nombre:       string
+  tipo:             TipoAgenda
+  rangos:           RangoHorario[]
+  duracion_minutos: number
+  buffer_minutos:   number
+  is_active:        boolean
+  editando:         boolean
 }
 
 // ============================================================
@@ -53,19 +61,19 @@ export interface DiaAgendaForm {
 // ============================================================
 
 export interface AgendaBloqueoResponse {
-  id: number
-  medico_id: string
-  tipo: TipoBloqueo
-  motivo: string | null
-  fecha_inicio_colombia: string   // ISO con offset Colombia
-  fecha_fin_colombia: string
+  id:                    number
+  medico_id:             string
+  tipo:                  TipoBloqueo
+  motivo:                string | null
+  fecha_inicio_colombia: string
+  fecha_fin_colombia:    string
 }
 
 export interface AgendaBloqueoCreate {
-  tipo: TipoBloqueo
-  motivo?: string
-  fecha_inicio: string    // ISO sin tzinfo, hora Colombia: "2025-03-10T09:00"
-  fecha_fin: string
+  tipo:         TipoBloqueo
+  motivo?:      string
+  fecha_inicio: string    // ISO sin tzinfo, hora Colombia: "2026-04-10T09:00"
+  fecha_fin:    string
 }
 
 // ============================================================
@@ -73,31 +81,33 @@ export interface AgendaBloqueoCreate {
 // ============================================================
 
 export interface CitaResponse {
-  id: number
-  medico_id: string
-  customer_uuid: string | null
-  customer_email: string
-  customer_nombre: string
-  customer_phone: string | null
+  id:                         number
+  medico_id:                  string
+  customer_uuid:              string | null
+  customer_email:             string
+  customer_nombre:            string
+  customer_phone:             string | null
   fecha_hora_inicio_colombia: string
-  fecha_hora_fin_colombia: string
-  duracion_minutos: number
-  estado: EstadoCita
-  notas_paciente: string | null
-  notas_medico: string | null
-  token_cancelacion: string
-  cita_original_id: number | null
-  created_at_colombia: string
+  fecha_hora_fin_colombia:    string
+  duracion_minutos:           number
+  tipo_cita:                  string
+  estado:                     EstadoCita
+  notas_paciente:             string | null
+  notas_medico:               string | null
+  token_cancelacion:          string
+  cita_original_id:           number | null
+  meet_link:                  string | null
+  created_at_colombia:        string
 }
 
 export interface CitaUpdateEstado {
-  estado: EstadoCita
+  estado:       EstadoCita
   notas_medico?: string
 }
 
 export interface CitaReagendar {
-  fecha_hora_inicio: string   // ISO sin tzinfo, hora Colombia
-  duracion_minutos: number
+  fecha_hora_inicio: string
+  duracion_minutos:  number
 }
 
 // ============================================================
@@ -105,16 +115,30 @@ export interface CitaReagendar {
 // ============================================================
 
 export interface SlotDisponible {
-  inicio_colombia: string     // ISO con offset: "2025-03-10T09:00:00-05:00"
-  fin_colombia: string
+  inicio_colombia:  string
+  fin_colombia:     string
   duracion_minutos: number
 }
 
 export interface SlotsDisponiblesResponse {
-  medico_id: string
-  fecha: string               // "YYYY-MM-DD"
+  medico_id:        string
+  fecha:            string
   duracion_minutos: number
-  slots: SlotDisponible[]
+  slots:            SlotDisponible[]
+}
+
+export interface DiaDisponibilidad {
+  fecha:                string
+  dia_semana:           number
+  tiene_disponibilidad: boolean
+  slots_count:          number
+}
+
+export interface SemanaDisponibilidadResponse {
+  medico_id:        string
+  fecha_lunes:      string
+  duracion_minutos: number
+  dias:             DiaDisponibilidad[]
 }
 
 // ============================================================
@@ -131,7 +155,8 @@ export const DIAS_SEMANA: { dia_semana: number; dia_nombre: string }[] = [
   { dia_semana: 6, dia_nombre: 'Domingo' },
 ]
 
-export const DURACIONES_OPCIONES = [15, 20, 30, 45, 60, 90]
+export const DURACION_ASISTENCIAL_DEFAULT  = 40
+export const DURACION_DESCUBRIMIENTO_DEFAULT = 20
 
 export const ESTADO_CITA_LABEL: Record<EstadoCita, string> = {
   PENDIENTE:  'Pendiente',
@@ -151,7 +176,6 @@ export const ESTADO_CITA_COLOR: Record<EstadoCita, string> = {
   COMPLETADA: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
 }
 
-// Transiciones válidas que el médico puede hacer desde el front
 export const TRANSICIONES_MEDICO: Record<EstadoCita, EstadoCita[]> = {
   PENDIENTE:  ['CONFIRMADA', 'CANCELADA'],
   CONFIRMADA: ['COMPLETADA', 'NO_SHOW', 'CANCELADA'],
@@ -161,9 +185,7 @@ export const TRANSICIONES_MEDICO: Record<EstadoCita, EstadoCita[]> = {
   REAGENDADA: [],
 }
 
-// Formatea un ISO string Colombia a "Lun 10 Mar · 09:00"
 export function formatFechaCita(isoString: string): string {
-  const date = new Date(isoString)
   return new Intl.DateTimeFormat('es-CO', {
     timeZone: 'America/Bogota',
     weekday: 'short',
@@ -171,47 +193,37 @@ export function formatFechaCita(isoString: string): string {
     month: 'short',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(date)
+  }).format(new Date(isoString))
 }
 
-// Formatea solo la hora: "09:00"
 export function formatHora(isoString: string): string {
-  const date = new Date(isoString)
   return new Intl.DateTimeFormat('es-CO', {
     timeZone: 'America/Bogota',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(date)
+  }).format(new Date(isoString))
 }
 
-// Formatea fecha corta: "Lun 10 Mar"
 export function formatFechaCorta(isoString: string): string {
-  const date = new Date(isoString)
   return new Intl.DateTimeFormat('es-CO', {
     timeZone: 'America/Bogota',
     weekday: 'short',
     day: 'numeric',
     month: 'short',
-  }).format(date)
+  }).format(new Date(isoString))
 }
 
-// Convierte Date a string ISO sin tzinfo para enviar al back: "2025-03-10T09:00"
 export function dateToColombiaISO(date: Date): string {
   return new Intl.DateTimeFormat('sv-SE', {
     timeZone: 'America/Bogota',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
   })
     .format(date)
     .replace(' ', 'T')
-    .substring(0, 16) // "2025-03-10T09:00"
+    .substring(0, 16)
 }
 
-// Fecha de hoy en Colombia como "YYYY-MM-DD"
 export function todayColombia(): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Bogota',
