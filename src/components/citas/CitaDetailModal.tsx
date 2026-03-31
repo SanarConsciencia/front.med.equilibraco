@@ -6,6 +6,7 @@ import type {
   CitaResponse,
   EstadoCita,
   SlotDisponible,
+  TipoAgenda,
 } from "../../types/agendaTypes";
 import {
   ESTADO_CITA_LABEL,
@@ -141,7 +142,7 @@ const ReagendarView: React.FC<{
       const data = await disponibilidadApi.getSlots(
         token,
         f,
-        cita.duracion_minutos,
+        cita.tipo_cita as TipoAgenda,
       );
       setSlots(data.slots);
     } catch {
