@@ -1,13 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useCitasStore } from "../../stores/citasStore";
 import { useAppStore } from "../../stores/appStore";
 import { Button } from "../ui";
 import type {
   CitaResponse,
   EstadoCita,
+  EvaluacionPreConsulta,
   SlotDisponible,
   TipoAgenda,
 } from "../../types/agendaTypes";
+import { PERFIL_BADGE_COLOR } from "../../types/agendaTypes";
 import {
   ESTADO_CITA_LABEL,
   ESTADO_CITA_COLOR,
@@ -16,7 +18,7 @@ import {
   formatHora,
   todayColombia,
 } from "../../types/agendaTypes";
-import { disponibilidadApi } from "../../services/agendaApi";
+import { citasApi, disponibilidadApi } from "../../services/agendaApi";
 
 // ── Subvista: cambiar estado ───────────────────────────────────────────────────
 
@@ -259,8 +261,37 @@ interface Props {
 }
 
 const CitaDetailModal: React.FC<Props> = ({ cita, onClose }) => {
+  const { token } = useAppStore();
   const [vista, setVista] = useState<Vista>("detalle");
   const [meetCopiado, setMeetCopiado] = useState(false);
+  const [evaluacion, setEvaluacion] = useState<EvaluacionPreConsulta | null>(
+    null,
+  );
+  const [loadingEval, setLoadingEval] = useState(false);
+
+  useEffect(() => {
+    if (!cita || cita.tipo_cita !== "DESCUBRIMIENTO" || !token) {
+      setEvaluacion(null);
+      return;
+    }
+    let cancelled = false;
+    setLoadingEval(true);
+    citasApi
+      .getEvaluacionByCita(token, cita.id)
+      .then((data) => {
+        if (!cancelled) setEvaluacion(data);
+      })
+      .catch(() => {
+        if (!cancelled) setEvaluacion(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingEval(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cita?.id, cita?.tipo_cita, token]); // using optional chaining ids intentionally
 
   const copiarMeetLink = () => {
     if (!cita?.meet_link) return;
@@ -489,6 +520,52 @@ const CitaDetailModal: React.FC<Props> = ({ cita, onClose }) => {
                   </p>
                 </div>
               )}
+
+              {/* Cuestionario de pre-consulta */}
+              {cita.tipo_cita === "DESCUBRIMIENTO" &&
+                (loadingEval || evaluacion) && (
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Cuestionario de pre-consulta
+                    </p>
+
+                    {loadingEval && (
+                      <div className="flex justify-center py-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500" />
+                      </div>
+                    )}
+
+                    {!loadingEval && evaluacion && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold">Perfil:</span>
+                          <span
+                            className="text-xs font-bold px-2.5 py-1 rounded-full text-white"
+                            style={{
+                              backgroundColor:
+                                PERFIL_BADGE_COLOR[evaluacion.perfil],
+                            }}
+                          >
+                            {evaluacion.perfil}
+                          </span>
+                        </div>
+
+                        <div className="space-y-3">
+                          {evaluacion.respuestas.map((r, i) => (
+                            <div key={i}>
+                              <p className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                                {r.pregunta}
+                              </p>
+                              <p className="text-sm text-gray-800 dark:text-gray-200 mt-0.5">
+                                → {r.respuesta}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
 
               {/* Notas médico */}
               {cita.notas_medico && (
