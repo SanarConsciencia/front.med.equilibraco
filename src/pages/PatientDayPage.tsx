@@ -364,7 +364,6 @@ const PatientDayPage: React.FC = () => {
         {/* Day data */}
         {!loading && day && (
           <>
-            
             {/* Grocery planner trigger */}
             <button
               type="button"
@@ -435,7 +434,6 @@ const PatientDayPage: React.FC = () => {
 
             {/* Day overview */}
             <DayOverview day={day} />
-
 
             {/* Day feedback */}
             <DayFeedbackPanel
@@ -556,6 +554,7 @@ const PatientDayPage: React.FC = () => {
           patientUuid={uuid}
           patientName={patientName}
           medicoId={doctor?.id ?? ""}
+          patientPhone={customer?.customer_phone ?? null}
           onClose={() => setGroceryPlannerOpen(false)}
           requirementsPreset={
             day

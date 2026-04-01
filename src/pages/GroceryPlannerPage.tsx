@@ -21,6 +21,8 @@ interface GroceryPlannerPageProps {
   onClose: () => void;
   /** Pre-filled from day.requirements.total — editable by tapping "Editar" */
   requirementsPreset?: MacroTargets;
+  /** Customer phone to pre-fill WhatsApp field */
+  patientPhone?: string | null;
 }
 
 type Step = "config" | "items" | "market" | "plans";
@@ -62,6 +64,40 @@ function computeItem(
     fiber_contribution,
     sugar_contribution,
   };
+}
+
+// ─── Egg special case: 1 huevo ≈ 55 g ──────────────────────────────────────
+const EGG_GRAMS_PER_UNIT = 55;
+const isEgg = (name: string) => /huevo/i.test(name);
+/** Egg items that should be merged: has "huevo" but is NOT pasta con huevo */
+const isEggToMerge = (name: string) => isEgg(name) && !/pasta/i.test(name);
+const eggUnits = (totalG: number) => Math.ceil(totalG / EGG_GRAMS_PER_UNIT);
+
+/** Collapse all egg-to-merge items into a single "Huevos" row, summing raw_grams_total */
+function mergeItemsForMarket(
+  items: GroceryPlanItemWithCalc[],
+): GroceryPlanItemWithCalc[] {
+  const eggItems = items.filter((i) => isEggToMerge(i.food_name));
+  if (eggItems.length <= 1) return items;
+  const totalEggG = eggItems.reduce((sum, i) => sum + i.raw_grams_total, 0);
+  const merged: GroceryPlanItemWithCalc = {
+    ...eggItems[0],
+    food_id: -1,
+    food_name: "Huevos",
+    raw_grams_total: totalEggG,
+    daily_grams: 0,
+    item_days: 0,
+    raw_equivalent_factor: 1.0,
+  };
+  let placed = false;
+  return items.flatMap((i) => {
+    if (!isEggToMerge(i.food_name)) return [i];
+    if (!placed) {
+      placed = true;
+      return [merged];
+    }
+    return [];
+  });
 }
 
 function compliancePct(contribution: number, target: number): number {
@@ -108,6 +144,7 @@ const GroceryPlannerPage: React.FC<GroceryPlannerPageProps> = ({
   medicoId,
   onClose,
   requirementsPreset,
+  patientPhone,
 }) => {
   // ── State ──────────────────────────────────────────────────────────────────
   const [step, setStep] = useState<Step>("config");
@@ -148,6 +185,13 @@ const GroceryPlannerPage: React.FC<GroceryPlannerPageProps> = ({
   >([]);
   const [registeringPurchase, setRegisteringPurchase] = useState(false);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
+  const [whatsappSheetOpen, setWhatsappSheetOpen] = useState(false);
+  const [whatsappPhone, setWhatsappPhone] = useState<string>(() => {
+    const digits = (patientPhone ?? "").replace(/\D/g, "");
+    if (!digits) return "57";
+    return digits.startsWith("57") ? digits : `57${digits}`;
+  });
+  const [copied, setCopied] = useState(false);
 
   // ── Food store ─────────────────────────────────────────────────────────────
   const loadFoods = usePatientFoodsStore((s) => s.loadFoods);
@@ -244,6 +288,7 @@ const GroceryPlannerPage: React.FC<GroceryPlannerPageProps> = ({
 
   const handleFoodSelect = (food: CustomerFood) => {
     setShowFoodSearch(false);
+    setFoodSearchQuery("");
     setSelectedFood(food);
     setPendingGrams(food.custom_serving_size ?? food.serving_size ?? 100);
     setPendingDays(daysCount);
@@ -340,6 +385,116 @@ const GroceryPlannerPage: React.FC<GroceryPlannerPageProps> = ({
     }
   };
 
+  // ── Share / export helpers ─────────────────────────────────────────────────────
+
+  const buildShoppingText = () => {
+    const lines = mergeItemsForMarket(items).map((item) => {
+      const totalG = Math.round(item.raw_grams_total / 10) * 10;
+      const display = isEgg(item.food_name)
+        ? `${eggUnits(totalG)} und.`
+        : totalG >= 1000
+          ? `${(totalG / 1000).toFixed(2).replace(".", ",")} kg`
+          : `${totalG} g`;
+      return `• ${item.food_name}: ${display}`;
+    });
+    return [
+      `🛒 *Lista de mercado — ${patientName}*`,
+      `_${daysCount} días_`,
+      "",
+      ...lines,
+    ].join("\n");
+  };
+
+  const handleCopyText = async () => {
+    try {
+      await navigator.clipboard.writeText(buildShoppingText());
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const handleSendWhatsApp = () => {
+    const phone = whatsappPhone.replace(/\D/g, "");
+    const text = encodeURIComponent(buildShoppingText());
+    window.open(
+      `https://wa.me/${phone}?text=${text}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+    setWhatsappSheetOpen(false);
+  };
+
+  const handlePrintPdf = () => {
+    const html =
+      `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Lista de mercado — ${patientName}</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; color: #111; }
+    h1 { font-size: 20px; margin-bottom: 4px; }
+    p.sub { font-size: 13px; color: #666; margin: 0 0 24px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+    th { text-align: left; font-size: 11px; text-transform: uppercase; color: #888;
+         border-bottom: 2px solid #e5e7eb; padding: 6px 8px; }
+    td { padding: 8px 8px; border-bottom: 1px solid #f3f4f6; font-size: 14px; }
+    td:last-child, th:last-child { text-align: right; font-weight: 600; }
+    .factor { font-size: 11px; color: #d97706; }
+    @media print { body { margin: 20px; } }
+  </style>
+</head>
+<body>
+  <h1>Lista de mercado</h1>
+  <p class="sub">${patientName} &mdash; ${daysCount} días &mdash; Plan: ${planName}</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Alimento</th>
+        <th>g/día</th>
+        <th>Días</th>
+        <th>Total crudo</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${mergeItemsForMarket(items)
+        .map((item) => {
+          const totalG = Math.round(item.raw_grams_total / 10) * 10;
+          const display = isEgg(item.food_name)
+            ? `${eggUnits(totalG)} und.`
+            : totalG >= 1000
+              ? `${(totalG / 1000).toFixed(2)} kg`
+              : `${totalG} g`;
+          const factorNote =
+            item.food_id !== -1 && item.raw_equivalent_factor !== 1.0
+              ? `<br/><span class="factor">×${item.raw_equivalent_factor.toFixed(2)} crudo</span>`
+              : "";
+          const gDia = item.food_id === -1 ? "—" : String(item.daily_grams);
+          const dias = item.food_id === -1 ? "—" : String(item.item_days);
+          return `<tr>
+            <td>${item.food_name}${factorNote}</td>
+            <td>${gDia}</td>
+            <td>${dias}</td>
+            <td>${display}</td>
+          </tr>`;
+        })
+        .join("")} 
+    </tbody>
+  </table>
+  <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }</` +
+      `script>
+</body>
+</html>`;
+    const w = window.open("", "_blank");
+    if (w) {
+      w.document.write(html);
+      w.document.close();
+    }
+  };
+
   const handleDownloadCsv = () => {
     const rows = [
       [
@@ -350,15 +505,18 @@ const GroceryPlannerPage: React.FC<GroceryPlannerPageProps> = ({
         "total_crudo_g",
         "total_crudo_kg",
       ],
-      ...items.map((item) => {
+      ...mergeItemsForMarket(items).map((item) => {
         const totalCrudoG = Math.round(item.raw_grams_total / 10) * 10;
+        const eggDisplay = isEgg(item.food_name)
+          ? `${eggUnits(totalCrudoG)} und`
+          : undefined;
         return [
           item.food_name,
-          item.daily_grams.toString(),
-          item.item_days.toString(),
-          item.raw_equivalent_factor.toFixed(2),
-          totalCrudoG.toString(),
-          (totalCrudoG / 1000).toFixed(3),
+          item.food_id === -1 ? "—" : item.daily_grams.toString(),
+          item.food_id === -1 ? "—" : item.item_days.toString(),
+          item.food_id === -1 ? "—" : item.raw_equivalent_factor.toFixed(2),
+          eggDisplay ?? totalCrudoG.toString(),
+          eggDisplay ?? (totalCrudoG / 1000).toFixed(3),
         ];
       }),
     ];
@@ -782,9 +940,10 @@ const GroceryPlannerPage: React.FC<GroceryPlannerPageProps> = ({
           <span className="text-right">Días</span>
           <span className="text-right">Total crudo</span>
         </div>
-        {items.map((item) => {
+        {mergeItemsForMarket(items).map((item) => {
           const totalCrudoG = Math.round(item.raw_grams_total / 10) * 10;
           const totalCrudoKg = totalCrudoG / 1000;
+          const isMergedEgg = item.food_id === -1;
           return (
             <div
               key={item.food_id}
@@ -795,15 +954,20 @@ const GroceryPlannerPage: React.FC<GroceryPlannerPageProps> = ({
               </p>
               <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                 <span>
-                  {item.daily_grams}g/día × {item.item_days} días
-                  {item.raw_equivalent_factor !== 1.0
-                    ? ` × ${item.raw_equivalent_factor.toFixed(2)}`
-                    : ""}
+                  {isMergedEgg
+                    ? "Todas las presentaciones"
+                    : `${item.daily_grams}g/día × ${item.item_days} días${
+                        item.raw_equivalent_factor !== 1.0
+                          ? ` × ${item.raw_equivalent_factor.toFixed(2)}`
+                          : ""
+                      }`}
                 </span>
                 <span className="font-semibold text-sm text-gray-900 dark:text-white">
-                  {totalCrudoKg >= 1
-                    ? `${totalCrudoKg.toFixed(2)} kg`
-                    : `${totalCrudoG}g`}
+                  {isEgg(item.food_name)
+                    ? `${eggUnits(totalCrudoG)} und.`
+                    : totalCrudoKg >= 1
+                      ? `${totalCrudoKg.toFixed(2)} kg`
+                      : `${totalCrudoG}g`}
                 </span>
               </div>
             </div>
@@ -847,26 +1011,108 @@ const GroceryPlannerPage: React.FC<GroceryPlannerPageProps> = ({
 
       {/* Action buttons */}
       <div className="space-y-2">
+        {/* Row 1: PDF + CSV */}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handlePrintPdf}
+            className="flex-1 min-h-[44px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium text-sm flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+              />
+            </svg>
+            PDF
+          </button>
+          <button
+            type="button"
+            onClick={handleDownloadCsv}
+            className="flex-1 min-h-[44px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium text-sm flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            CSV
+          </button>
+        </div>
+
+        {/* Copiar texto */}
         <button
           type="button"
-          onClick={handleDownloadCsv}
+          onClick={handleCopyText}
           className="w-full min-h-[44px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium text-sm flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
-          Descargar CSV
+          {copied ? (
+            <>
+              <svg
+                className="w-4 h-4 text-green-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              <span className="text-green-600 dark:text-green-400">
+                ¡Copiado!
+              </span>
+            </>
+          ) : (
+            <>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                />
+              </svg>
+              Copiar texto
+            </>
+          )}
         </button>
+
+        {/* WhatsApp */}
+        <button
+          type="button"
+          onClick={() => setWhatsappSheetOpen(true)}
+          className="w-full min-h-[44px] rounded-xl bg-[#25D366] hover:bg-[#1ebe5d] text-white font-medium text-sm flex items-center justify-center gap-2 transition-colors"
+        >
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+            <path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.659 1.438 5.168L2 22l4.986-1.407A9.955 9.955 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 11.999 2zm0 18a7.96 7.96 0 01-4.071-1.115l-.29-.173-3.007.849.841-3.088-.19-.31A7.96 7.96 0 014 12c0-4.418 3.582-8 8-8s8 3.582 8 8-3.582 8-8 8z" />
+          </svg>
+          Enviar por WhatsApp
+        </button>
+
         {savedPlanId == null && (
           <button
             type="button"
@@ -1271,6 +1517,75 @@ const GroceryPlannerPage: React.FC<GroceryPlannerPageProps> = ({
             ) : (
               "Confirmar compra"
             )}
+          </button>
+        </div>
+      </BottomSheet>
+
+      {/* WhatsApp sheet */}
+      <BottomSheet
+        isOpen={whatsappSheetOpen}
+        onClose={() => setWhatsappSheetOpen(false)}
+        title="Enviar por WhatsApp"
+      >
+        <div className="px-4 pb-6 space-y-4">
+          {/* Preview */}
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 space-y-1 max-h-48 overflow-y-auto">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+              Vista previa del mensaje
+            </p>
+            {items.map((item) => {
+              const totalG = Math.round(item.raw_grams_total / 10) * 10;
+              const display =
+                totalG >= 1000
+                  ? `${(totalG / 1000).toFixed(2).replace(".", ",")} kg`
+                  : `${totalG} g`;
+              return (
+                <p
+                  key={item.food_id}
+                  className="text-sm text-gray-700 dark:text-gray-300"
+                >
+                  • {item.food_name}:{" "}
+                  <span className="font-semibold">{display}</span>
+                </p>
+              );
+            })}
+          </div>
+
+          {/* Phone input */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              Número de WhatsApp (con código de país)
+            </label>
+            <input
+              type="tel"
+              value={whatsappPhone}
+              onChange={(e) =>
+                setWhatsappPhone((prev) => {
+                  const next = e.target.value.replace(/[^\d+]/g, "");
+                  // Prevent deleting the leading 57 prefix
+                  if (!next.startsWith("57")) return prev;
+                  return next;
+                })
+              }
+              placeholder="573001234567"
+              className="w-full min-h-[44px] px-3 text-base rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#25D366]"
+            />
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Ej: 573001234567 (Colombia 57 + número sin cero)
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSendWhatsApp}
+            disabled={whatsappPhone.replace(/\D/g, "").length < 7}
+            className="w-full min-h-[44px] rounded-xl bg-[#25D366] hover:bg-[#1ebe5d] text-white font-semibold text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+              <path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.659 1.438 5.168L2 22l4.986-1.407A9.955 9.955 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 11.999 2zm0 18a7.96 7.96 0 01-4.071-1.115l-.29-.173-3.007.849.841-3.088-.19-.31A7.96 7.96 0 014 12c0-4.418 3.582-8 8-8s8 3.582 8 8-3.582 8-8 8z" />
+            </svg>
+            Abrir WhatsApp →
           </button>
         </div>
       </BottomSheet>
