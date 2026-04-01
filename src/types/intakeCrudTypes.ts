@@ -69,5 +69,7 @@ export interface CustomerFood {
   fiber_g?: number | null;
   sugars_g?: number | null;
   kcal?: number | null;
+  // Cooking factor: grams_raw = registered_g × factor. <1 gains weight (rice≈0.33), =1 no change (apple), >1 loses weight (chicken≈1.43)
+  raw_equivalent_factor?: number | null;
   [key: string]: unknown;
 }

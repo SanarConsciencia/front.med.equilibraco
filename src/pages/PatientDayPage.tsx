@@ -21,6 +21,7 @@ import MealFormModal from "../components/day/MealFormModal";
 import type { MealFormData } from "../components/day/MealFormModal";
 import { GlobalMealModal } from "../components/common/GlobalMealModal";
 import NutriAnalysisPage from "./NutriAnalysisPage";
+import GroceryPlannerPage from "./GroceryPlannerPage";
 
 const PatientDayPage: React.FC = () => {
   const { uuid } = useParams<{ uuid: string }>();
@@ -40,6 +41,7 @@ const PatientDayPage: React.FC = () => {
   const [editingMeal, setEditingMeal] = useState<SerializedMeal | null>(null);
   const [creatingDay, setCreatingDay] = useState(false);
   const [nutriAnalysisOpen, setNutriAnalysisOpen] = useState(false);
+  const [groceryPlannerOpen, setGroceryPlannerOpen] = useState(false);
   const [generatingReport, setGeneratingReport] = useState(false);
   const [copyingPrompt, setCopyingPrompt] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
@@ -362,8 +364,40 @@ const PatientDayPage: React.FC = () => {
         {/* Day data */}
         {!loading && day && (
           <>
-            {/* Day overview */}
-            <DayOverview day={day} />
+            
+            {/* Grocery planner trigger */}
+            <button
+              type="button"
+              onClick={() => setGroceryPlannerOpen(true)}
+              className="w-full flex items-center justify-between gap-3 px-4 py-3.5 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 text-left active:bg-gray-50 dark:active:bg-gray-800 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center flex-shrink-0">
+                  <span className="text-lg">🛒</span>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                    Planificar mercado
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                    Crear lista de compras con totales crudos
+                  </p>
+                </div>
+              </div>
+              <svg
+                className="w-5 h-5 text-gray-300 dark:text-gray-600 flex-shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
 
             {/* Nutrient analysis trigger */}
             <button
@@ -398,6 +432,10 @@ const PatientDayPage: React.FC = () => {
                 />
               </svg>
             </button>
+
+            {/* Day overview */}
+            <DayOverview day={day} />
+
 
             {/* Day feedback */}
             <DayFeedbackPanel
@@ -509,6 +547,27 @@ const PatientDayPage: React.FC = () => {
           patientName={patientName}
           isOpen={nutriAnalysisOpen}
           onClose={() => setNutriAnalysisOpen(false)}
+        />
+      )}
+
+      {/* Grocery planner full-screen overlay */}
+      {groceryPlannerOpen && (
+        <GroceryPlannerPage
+          patientUuid={uuid}
+          patientName={patientName}
+          medicoId={doctor?.id ?? ""}
+          onClose={() => setGroceryPlannerOpen(false)}
+          requirementsPreset={
+            day
+              ? {
+                  proteins_g: day.requirements.total.proteins_g ?? 0,
+                  carbs_g: day.requirements.total.carbs_g ?? 0,
+                  fats_g: day.requirements.total.fats_g ?? 0,
+                  fiber_g: day.requirements.total.fiber_g ?? 0,
+                  sugars_g: day.requirements.total.sugars_g ?? 0,
+                }
+              : undefined
+          }
         />
       )}
 

@@ -30,6 +30,8 @@ export const getPatientFoods = async (
     fiber_g: f.fiber_g,
     sugars_g: f.sugars_g,
     kcal: f.calories ?? f.kcal,
+    raw_equivalent_factor:
+      f.raw_equivalent_factor ?? f.properties?.raw_equivalent_factor ?? 1.0,
   }));
 };
 
