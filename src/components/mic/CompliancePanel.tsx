@@ -14,7 +14,6 @@ interface NutrientMeta {
 const NUTRIENT_LIST: NutrientMeta[] = [
   { key: "overall_score", label: "Kiwímetro", group: "Scores", isPct: false },
   { key: "inflamitis_score", label: "E-DII", group: "Scores", isPct: false },
-  { key: "day_dii", label: "DII clásico", group: "Scores", isPct: false },
   { key: "proteins_pct", label: "Proteínas", group: "Macros", isPct: true },
   { key: "carbs_pct", label: "Carbohidratos", group: "Macros", isPct: true },
   { key: "starches_pct", label: "Almidones", group: "Macros", isPct: true },
@@ -87,6 +86,22 @@ function pctBg(v: number | null): string {
   return "bg-red-400";
 }
 
+function getDiiInterpretation(v: number | null): {
+  label: string;
+  cls: string;
+} {
+  if (v === null) return { label: "N/A", cls: "text-gray-400" };
+  // Shivappa percentiles thresholds
+  // const thresholds = { p25: -2.36, median: 0.23, p75: 1.9, p90: 4.0 };
+  if (v <= -2.36)
+    return { label: "Muy Antiinflamatorio", cls: "text-green-600" };
+  if (v <= 0.23) return { label: "Antiinflamatorio", cls: "text-green-500" };
+  if (v <= 1.9)
+    return { label: "Neutro", cls: "text-yellow-600" };
+  if (v <= 4.0) return { label: "Proinflamatorio", cls: "text-orange-500" };
+  return { label: "Muy Proinflamatorio", cls: "text-red-500" };
+}
+
 function NutrientBar({
   label,
   value,
@@ -118,7 +133,7 @@ function NutrientBar({
             ? `${Math.round(value)}%`
             : value % 1 === 0
               ? String(value)
-              : value.toFixed(1)
+              : value.toFixed(2)
           : "—"}
       </span>
     </div>
@@ -180,17 +195,12 @@ function ByDateView({ snapshots }: { snapshots: DaySnapshot[] }) {
                 E-DII
               </span>
               <span className="text-xs font-bold tabular-nums text-gray-700 dark:text-gray-300">
-                {snap.inflamitis_score.toFixed(1)}
+                {snap.inflamitis_score.toFixed(2)}
               </span>
-            </div>
-          )}
-          {snap.day_dii !== null && (
-            <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg px-2.5 py-1">
-              <span className="text-[9px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                DII
-              </span>
-              <span className="text-xs font-bold tabular-nums text-gray-700 dark:text-gray-300">
-                {snap.day_dii.toFixed(1)}
+              <span
+                className={`text-[10px] font-medium ${getDiiInterpretation(snap.inflamitis_score).cls}`}
+              >
+                {getDiiInterpretation(snap.inflamitis_score).label}
               </span>
             </div>
           )}
@@ -332,7 +342,7 @@ function ByNutrientView({ snapshots }: { snapshots: DaySnapshot[] }) {
                     ? `${Math.round(v)}%`
                     : v % 1 === 0
                       ? String(v)
-                      : v.toFixed(1)
+                      : v.toFixed(2)
                   : "—"}
               </span>
             </div>
