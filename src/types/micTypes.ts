@@ -4,7 +4,15 @@
 
 export interface MicItemCreate {
   name: string;
-  item_type: "pdf" | "mensaje_rapido" | "guia" | "otro";
+  item_type:
+    | "guia"
+    | "mensaje_rapido"
+    | "pdf_educativo"
+    | "contenido_social"
+    | "video_educativo"
+    | "protocolo"
+    | "checklist"
+    | "receta";
   description?: string | null;
   url?: string | null;
   order?: number;
@@ -15,7 +23,15 @@ export interface MicItemResponse {
   id: number;
   objective_id: number;
   name: string;
-  item_type: "pdf" | "mensaje_rapido" | "guia" | "otro";
+  item_type:
+    | "guia"
+    | "mensaje_rapido"
+    | "pdf_educativo"
+    | "contenido_social"
+    | "video_educativo"
+    | "protocolo"
+    | "checklist"
+    | "receta";
   description: string | null;
   url: string | null;
   order: number;
@@ -126,7 +142,15 @@ export interface MicItem {
   id: number;
   objective_id: number;
   name: string;
-  item_type: "pdf" | "mensaje_rapido" | "guia" | "otro";
+  item_type:
+    | "guia"
+    | "mensaje_rapido"
+    | "pdf_educativo"
+    | "contenido_social"
+    | "video_educativo"
+    | "protocolo"
+    | "checklist"
+    | "receta";
   description: string | null;
   url: string | null;
   order: number;
