@@ -79,7 +79,7 @@ export function ObjectiveDetail({
     try {
       await addItem(objective.id, {
         name: "Nuevo material",
-        item_type: "otro",
+        item_type: "guia",
       });
     } catch (err) {
       onError(err instanceof Error ? err.message : "Error al agregar material");
@@ -307,10 +307,14 @@ export function ObjectiveDetail({
                     }
                     className="text-xs px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none"
                   >
-                    <option value="pdf">PDF</option>
-                    <option value="mensaje_rapido">Mensaje rápido</option>
                     <option value="guia">Guía</option>
-                    <option value="otro">Otro</option>
+                    <option value="mensaje_rapido">Mensaje rápido</option>
+                    <option value="pdf_educativo">PDF Educativo</option>
+                    <option value="video_educativo">Video Educativo</option>
+                    <option value="contenido_social">Contenido Social</option>
+                    <option value="protocolo">Protocolo</option>
+                    <option value="checklist">Checklist</option>
+                    <option value="receta">Receta</option>
                   </select>
                   <input
                     defaultValue={item.name}
