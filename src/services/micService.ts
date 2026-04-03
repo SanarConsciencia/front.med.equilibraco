@@ -2,10 +2,10 @@ import type {
   MicPatientProgressResponse,
   MicProgressResponse,
   MicProgressUpdate,
-  MicPillarWithPhases,
-  MicPhaseWithObjectives,
-  MicObjectiveWithProgress,
-  MicItem,
+  MicPillarResponse,
+  MicPhaseResponse,
+  MicObjectiveResponse,
+  MicItemResponse,
   MicPillarCreate,
   MicPhaseCreate,
   MicObjectiveCreate,
@@ -46,7 +46,7 @@ export async function getPatientProgress(
   token: string,
 ): Promise<MicPatientProgressResponse> {
   return jsonFetch<MicPatientProgressResponse>(
-    `${BASE}/api/v1/mic/patients/${customerUuid}/progress`,
+    `${BASE}/api/v1/mic/customers/${customerUuid}/progress`,
     { headers: authHeaders(token) },
   )
 }
@@ -58,9 +58,9 @@ export async function updateObjectiveProgress(
   token: string,
 ): Promise<MicProgressResponse> {
   return jsonFetch<MicProgressResponse>(
-    `${BASE}/api/v1/mic/patients/${customerUuid}/objectives/${objectiveId}/progress`,
+    `${BASE}/api/v1/mic/customers/${customerUuid}/objectives/${objectiveId}`,
     {
-      method: 'PUT',
+      method: 'PATCH',
       headers: authHeaders(token),
       body: JSON.stringify(data),
     },
@@ -69,8 +69,8 @@ export async function updateObjectiveProgress(
 
 // ── Sistema global (admin) ────────────────────────────────────────────────────
 
-export async function getPillars(adminKey: string): Promise<MicPillarWithPhases[]> {
-  return jsonFetch<MicPillarWithPhases[]>(`${BASE}/api/v1/mic/pillars`, {
+export async function getPillars(adminKey: string): Promise<MicPillarResponse[]> {
+  return jsonFetch<MicPillarResponse[]>(`${BASE}/api/v1/mic/pillars`, {
     headers: adminHeaders(adminKey),
   })
 }
@@ -78,8 +78,8 @@ export async function getPillars(adminKey: string): Promise<MicPillarWithPhases[
 export async function createPillar(
   data: MicPillarCreate,
   adminKey: string,
-): Promise<MicPillarWithPhases> {
-  return jsonFetch<MicPillarWithPhases>(`${BASE}/api/v1/mic/pillars`, {
+): Promise<MicPillarResponse> {
+  return jsonFetch<MicPillarResponse>(`${BASE}/api/v1/mic/pillars`, {
     method: 'POST',
     headers: adminHeaders(adminKey),
     body: JSON.stringify(data),
@@ -90,9 +90,9 @@ export async function updatePillar(
   id: number,
   data: Partial<MicPillarCreate>,
   adminKey: string,
-): Promise<MicPillarWithPhases> {
-  return jsonFetch<MicPillarWithPhases>(`${BASE}/api/v1/mic/pillars/${id}`, {
-    method: 'PATCH',
+): Promise<MicPillarResponse> {
+  return jsonFetch<MicPillarResponse>(`${BASE}/api/v1/mic/pillars/${id}`, {
+    method: 'PUT',
     headers: adminHeaders(adminKey),
     body: JSON.stringify(data),
   })
@@ -113,8 +113,8 @@ export async function createPhase(
   pillarId: number,
   data: MicPhaseCreate,
   adminKey: string,
-): Promise<MicPhaseWithObjectives> {
-  return jsonFetch<MicPhaseWithObjectives>(
+): Promise<MicPhaseResponse> {
+  return jsonFetch<MicPhaseResponse>(
     `${BASE}/api/v1/mic/pillars/${pillarId}/phases`,
     {
       method: 'POST',
@@ -128,9 +128,9 @@ export async function updatePhase(
   id: number,
   data: Partial<MicPhaseCreate>,
   adminKey: string,
-): Promise<MicPhaseWithObjectives> {
-  return jsonFetch<MicPhaseWithObjectives>(`${BASE}/api/v1/mic/phases/${id}`, {
-    method: 'PATCH',
+): Promise<MicPhaseResponse> {
+  return jsonFetch<MicPhaseResponse>(`${BASE}/api/v1/mic/phases/${id}`, {
+    method: 'PUT',
     headers: adminHeaders(adminKey),
     body: JSON.stringify(data),
   })
@@ -151,8 +151,8 @@ export async function createObjective(
   phaseId: number,
   data: MicObjectiveCreate,
   adminKey: string,
-): Promise<MicObjectiveWithProgress> {
-  return jsonFetch<MicObjectiveWithProgress>(
+): Promise<MicObjectiveResponse> {
+  return jsonFetch<MicObjectiveResponse>(
     `${BASE}/api/v1/mic/phases/${phaseId}/objectives`,
     {
       method: 'POST',
@@ -166,11 +166,11 @@ export async function updateObjective(
   id: number,
   data: Partial<MicObjectiveCreate>,
   adminKey: string,
-): Promise<MicObjectiveWithProgress> {
-  return jsonFetch<MicObjectiveWithProgress>(
+): Promise<MicObjectiveResponse> {
+  return jsonFetch<MicObjectiveResponse>(
     `${BASE}/api/v1/mic/objectives/${id}`,
     {
-      method: 'PATCH',
+      method: 'PUT',
       headers: adminHeaders(adminKey),
       body: JSON.stringify(data),
     },
@@ -192,8 +192,8 @@ export async function createItem(
   objectiveId: number,
   data: MicItemCreate,
   adminKey: string,
-): Promise<MicItem> {
-  return jsonFetch<MicItem>(
+): Promise<MicItemResponse> {
+  return jsonFetch<MicItemResponse>(
     `${BASE}/api/v1/mic/objectives/${objectiveId}/items`,
     {
       method: 'POST',
@@ -207,9 +207,9 @@ export async function updateItem(
   id: number,
   data: Partial<MicItemCreate>,
   adminKey: string,
-): Promise<MicItem> {
-  return jsonFetch<MicItem>(`${BASE}/api/v1/mic/items/${id}`, {
-    method: 'PATCH',
+): Promise<MicItemResponse> {
+  return jsonFetch<MicItemResponse>(`${BASE}/api/v1/mic/items/${id}`, {
+    method: 'PUT',
     headers: adminHeaders(adminKey),
     body: JSON.stringify(data),
   })
