@@ -10,33 +10,41 @@ import type {
   MicPhaseCreate,
   MicObjectiveCreate,
   MicItemCreate,
-} from '../types/micTypes'
+  SnapshotsResponse,
+} from "../types/micTypes";
 
 const BASE =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
-  'https://api.medicos.equilibraco.com'
+  "https://api.medicos.equilibraco.com";
 
-async function jsonFetch<T>(url: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(url, options)
+const INTAKE_BASE =
+  (import.meta.env.VITE_INTAKE_API_URL as string | undefined) ??
+  "https://api.intake.equilibraco.com";
+
+async function jsonFetch<T>(
+  url: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const res = await fetch(url, options);
   if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    throw new Error(`HTTP ${res.status}: ${text}`)
+    const text = await res.text().catch(() => "");
+    throw new Error(`HTTP ${res.status}: ${text}`);
   }
-  return res.json() as Promise<T>
+  return res.json() as Promise<T>;
 }
 
 function authHeaders(token: string): Record<string, string> {
   return {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,
-  }
+  };
 }
 
 function adminHeaders(adminKey: string): Record<string, string> {
   return {
-    'Content-Type': 'application/json',
-    'X-MIC-Admin-Key': adminKey,
-  }
+    "Content-Type": "application/json",
+    "X-MIC-Admin-Key": adminKey,
+  };
 }
 
 // ── Progreso del paciente ─────────────────────────────────────────────────────
@@ -48,7 +56,7 @@ export async function getPatientProgress(
   return jsonFetch<MicPatientProgressResponse>(
     `${BASE}/api/v1/mic/customers/${customerUuid}/progress`,
     { headers: authHeaders(token) },
-  )
+  );
 }
 
 export async function updateObjectiveProgress(
@@ -60,19 +68,21 @@ export async function updateObjectiveProgress(
   return jsonFetch<MicProgressResponse>(
     `${BASE}/api/v1/mic/customers/${customerUuid}/objectives/${objectiveId}`,
     {
-      method: 'PATCH',
+      method: "PATCH",
       headers: authHeaders(token),
       body: JSON.stringify(data),
     },
-  )
+  );
 }
 
 // ── Sistema global (admin) ────────────────────────────────────────────────────
 
-export async function getPillars(adminKey: string): Promise<MicPillarResponse[]> {
+export async function getPillars(
+  adminKey: string,
+): Promise<MicPillarResponse[]> {
   return jsonFetch<MicPillarResponse[]>(`${BASE}/api/v1/mic/pillars`, {
     headers: adminHeaders(adminKey),
-  })
+  });
 }
 
 export async function createPillar(
@@ -80,10 +90,10 @@ export async function createPillar(
   adminKey: string,
 ): Promise<MicPillarResponse> {
   return jsonFetch<MicPillarResponse>(`${BASE}/api/v1/mic/pillars`, {
-    method: 'POST',
+    method: "POST",
     headers: adminHeaders(adminKey),
     body: JSON.stringify(data),
-  })
+  });
 }
 
 export async function updatePillar(
@@ -92,20 +102,23 @@ export async function updatePillar(
   adminKey: string,
 ): Promise<MicPillarResponse> {
   return jsonFetch<MicPillarResponse>(`${BASE}/api/v1/mic/pillars/${id}`, {
-    method: 'PUT',
+    method: "PUT",
     headers: adminHeaders(adminKey),
     body: JSON.stringify(data),
-  })
+  });
 }
 
-export async function deletePillar(id: number, adminKey: string): Promise<void> {
+export async function deletePillar(
+  id: number,
+  adminKey: string,
+): Promise<void> {
   const res = await fetch(`${BASE}/api/v1/mic/pillars/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: adminHeaders(adminKey),
-  })
+  });
   if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    throw new Error(`HTTP ${res.status}: ${text}`)
+    const text = await res.text().catch(() => "");
+    throw new Error(`HTTP ${res.status}: ${text}`);
   }
 }
 
@@ -117,11 +130,11 @@ export async function createPhase(
   return jsonFetch<MicPhaseResponse>(
     `${BASE}/api/v1/mic/pillars/${pillarId}/phases`,
     {
-      method: 'POST',
+      method: "POST",
       headers: adminHeaders(adminKey),
       body: JSON.stringify(data),
     },
-  )
+  );
 }
 
 export async function updatePhase(
@@ -130,20 +143,20 @@ export async function updatePhase(
   adminKey: string,
 ): Promise<MicPhaseResponse> {
   return jsonFetch<MicPhaseResponse>(`${BASE}/api/v1/mic/phases/${id}`, {
-    method: 'PUT',
+    method: "PUT",
     headers: adminHeaders(adminKey),
     body: JSON.stringify(data),
-  })
+  });
 }
 
 export async function deletePhase(id: number, adminKey: string): Promise<void> {
   const res = await fetch(`${BASE}/api/v1/mic/phases/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: adminHeaders(adminKey),
-  })
+  });
   if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    throw new Error(`HTTP ${res.status}: ${text}`)
+    const text = await res.text().catch(() => "");
+    throw new Error(`HTTP ${res.status}: ${text}`);
   }
 }
 
@@ -155,11 +168,11 @@ export async function createObjective(
   return jsonFetch<MicObjectiveResponse>(
     `${BASE}/api/v1/mic/phases/${phaseId}/objectives`,
     {
-      method: 'POST',
+      method: "POST",
       headers: adminHeaders(adminKey),
       body: JSON.stringify(data),
     },
-  )
+  );
 }
 
 export async function updateObjective(
@@ -170,21 +183,24 @@ export async function updateObjective(
   return jsonFetch<MicObjectiveResponse>(
     `${BASE}/api/v1/mic/objectives/${id}`,
     {
-      method: 'PUT',
+      method: "PUT",
       headers: adminHeaders(adminKey),
       body: JSON.stringify(data),
     },
-  )
+  );
 }
 
-export async function deleteObjective(id: number, adminKey: string): Promise<void> {
+export async function deleteObjective(
+  id: number,
+  adminKey: string,
+): Promise<void> {
   const res = await fetch(`${BASE}/api/v1/mic/objectives/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: adminHeaders(adminKey),
-  })
+  });
   if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    throw new Error(`HTTP ${res.status}: ${text}`)
+    const text = await res.text().catch(() => "");
+    throw new Error(`HTTP ${res.status}: ${text}`);
   }
 }
 
@@ -196,11 +212,11 @@ export async function createItem(
   return jsonFetch<MicItemResponse>(
     `${BASE}/api/v1/mic/objectives/${objectiveId}/items`,
     {
-      method: 'POST',
+      method: "POST",
       headers: adminHeaders(adminKey),
       body: JSON.stringify(data),
     },
-  )
+  );
 }
 
 export async function updateItem(
@@ -209,19 +225,31 @@ export async function updateItem(
   adminKey: string,
 ): Promise<MicItemResponse> {
   return jsonFetch<MicItemResponse>(`${BASE}/api/v1/mic/items/${id}`, {
-    method: 'PUT',
+    method: "PUT",
     headers: adminHeaders(adminKey),
     body: JSON.stringify(data),
-  })
+  });
 }
 
 export async function deleteItem(id: number, adminKey: string): Promise<void> {
   const res = await fetch(`${BASE}/api/v1/mic/items/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: adminHeaders(adminKey),
-  })
+  });
   if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    throw new Error(`HTTP ${res.status}: ${text}`)
+    const text = await res.text().catch(() => "");
+    throw new Error(`HTTP ${res.status}: ${text}`);
   }
+}
+
+// ── Snapshots de scores y cumplimiento ───────────────────────────────────────
+
+export async function getCustomerSnapshots(
+  customerId: string,
+  token: string,
+): Promise<SnapshotsResponse> {
+  return jsonFetch<SnapshotsResponse>(
+    `${INTAKE_BASE}/api/v1/scores/${encodeURIComponent(customerId)}/snapshots`,
+    { headers: authHeaders(token) },
+  );
 }
