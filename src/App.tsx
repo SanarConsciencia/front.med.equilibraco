@@ -6,6 +6,7 @@ import Home from "./pages/Home";
 import Customers from "./pages/Customers";
 import PeriodCustomerPage from "./pages/PeriodCustomerPage";
 import PatientDayPage from "./pages/PatientDayPage";
+import MicPage from "./pages/MicPage";
 import Login from "./pages/Login";
 import Agenda from "./pages/Agenda";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -78,6 +79,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <PatientDayPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/patients/:uuid/mic"
+            element={
+              <ProtectedRoute>
+                <MicPage />
               </ProtectedRoute>
             }
           />
