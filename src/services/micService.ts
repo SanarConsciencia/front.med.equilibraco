@@ -46,7 +46,7 @@ export async function getPatientProgress(
   token: string,
 ): Promise<MicPatientProgressResponse> {
   return jsonFetch<MicPatientProgressResponse>(
-    `${BASE}/api/v1/mic/patients/${customerUuid}/progress`,
+    `${BASE}/api/v1/mic/customers/${customerUuid}/progress`,
     { headers: authHeaders(token) },
   )
 }
@@ -58,9 +58,9 @@ export async function updateObjectiveProgress(
   token: string,
 ): Promise<MicProgressResponse> {
   return jsonFetch<MicProgressResponse>(
-    `${BASE}/api/v1/mic/patients/${customerUuid}/objectives/${objectiveId}/progress`,
+    `${BASE}/api/v1/mic/customers/${customerUuid}/objectives/${objectiveId}`,
     {
-      method: 'PUT',
+      method: 'PATCH',
       headers: authHeaders(token),
       body: JSON.stringify(data),
     },
@@ -92,7 +92,7 @@ export async function updatePillar(
   adminKey: string,
 ): Promise<MicPillarWithPhases> {
   return jsonFetch<MicPillarWithPhases>(`${BASE}/api/v1/mic/pillars/${id}`, {
-    method: 'PATCH',
+    method: 'PUT',
     headers: adminHeaders(adminKey),
     body: JSON.stringify(data),
   })
@@ -130,7 +130,7 @@ export async function updatePhase(
   adminKey: string,
 ): Promise<MicPhaseWithObjectives> {
   return jsonFetch<MicPhaseWithObjectives>(`${BASE}/api/v1/mic/phases/${id}`, {
-    method: 'PATCH',
+    method: 'PUT',
     headers: adminHeaders(adminKey),
     body: JSON.stringify(data),
   })
@@ -170,7 +170,7 @@ export async function updateObjective(
   return jsonFetch<MicObjectiveWithProgress>(
     `${BASE}/api/v1/mic/objectives/${id}`,
     {
-      method: 'PATCH',
+      method: 'PUT',
       headers: adminHeaders(adminKey),
       body: JSON.stringify(data),
     },
@@ -209,7 +209,7 @@ export async function updateItem(
   adminKey: string,
 ): Promise<MicItem> {
   return jsonFetch<MicItem>(`${BASE}/api/v1/mic/items/${id}`, {
-    method: 'PATCH',
+    method: 'PUT',
     headers: adminHeaders(adminKey),
     body: JSON.stringify(data),
   })
