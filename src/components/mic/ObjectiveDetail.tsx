@@ -4,7 +4,6 @@ import type {
   MicItem,
   MicProgressUpdate,
   MicObjectiveCreate,
-  MicItemCreate,
 } from "../../types/micTypes";
 import { useMicStore } from "../../stores/micStore";
 import { ObjectiveTypeBadge, ItemTypeBadge } from "./Badges";
@@ -34,6 +33,8 @@ export function ObjectiveDetail({
 }: ObjectiveDetailProps) {
   const { updateProgress, editObjective, addItem, editItem, removeItem } =
     useMicStore();
+  const editModeStore = useMicStore((s) => s.editMode);
+  const setIsDirtyStore = useMicStore((s) => s.setIsDirty);
 
   const [completed, setCompleted] = useState(
     objective.progress?.completed ?? false,
@@ -44,12 +45,94 @@ export function ObjectiveDetail({
   );
   const [selectedItem, setSelectedItem] = useState<MicItem | null>(null);
 
+  // --- LOCAL EDIT STATE ---
+  const [localName, setLocalName] = useState(objective.name);
+  const [localType, setLocalType] = useState(objective.objective_type);
+  const [localOptional, setLocalOptional] = useState(objective.is_optional);
+  const [localIntra, setLocalIntra] = useState(objective.is_intra);
+  const [localDesc, setLocalDesc] = useState(objective.description ?? "");
+  const [localCriteria, setLocalCriteria] = useState(objective.criteria ?? "");
+  const [localItems, setLocalItems] = useState<MicItem[]>(objective.items);
+
+  const [isDirty, setIsDirty] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Sync isDirty with store
+  useEffect(() => {
+    setIsDirtyStore(isDirty);
+    return () => setIsDirtyStore(false);
+  }, [isDirty, setIsDirtyStore]);
+
   // Sync when objective changes
   useEffect(() => {
     setCompleted(objective.progress?.completed ?? false);
     setNotes(objective.progress?.notes ?? "");
     setSaveState("idle");
-  }, [objective.id, objective.progress?.completed, objective.progress?.notes]);
+
+    // Reset local edit state
+    setLocalName(objective.name);
+    setLocalType(objective.objective_type);
+    setLocalOptional(objective.is_optional);
+    setLocalIntra(objective.is_intra);
+    setLocalDesc(objective.description ?? "");
+    setLocalCriteria(objective.criteria ?? "");
+    setLocalItems(objective.items);
+    setIsDirty(false);
+  }, [
+    objective.id,
+    objective.progress?.completed,
+    objective.progress?.notes,
+    objective.name,
+    objective.objective_type,
+    objective.is_optional,
+    objective.is_intra,
+    objective.description,
+    objective.criteria,
+    objective.items,
+    editModeStore,
+  ]);
+
+  const updateLocalItem = (itemId: number, field: Partial<MicItem>) => {
+    setLocalItems((prev) =>
+      prev.map((it) => (it.id === itemId ? { ...it, ...field } : it)),
+    );
+    setIsDirty(true);
+  };
+
+  const handleManualUpdate = async () => {
+    setIsUpdating(true);
+    try {
+      // 1. Update Objective
+      await editObjective(objective.id, {
+        name: localName,
+        objective_type: localType,
+        description: localDesc || null,
+        is_optional: localOptional,
+        is_intra: localIntra,
+        criteria: localCriteria || null,
+        order: objective.order,
+      });
+
+      // 2. Update Items (Backend requires full object PUT)
+      // Since localItems might have changes in name, type, url, desc, we iterate
+      for (const item of localItems) {
+        await editItem(item.id, {
+          name: item.name,
+          item_type: item.item_type,
+          description: item.description || null,
+          url: item.url || null,
+          order: item.order,
+        });
+      }
+
+      onSuccess("Objetivo actualizado");
+      setIsDirty(false);
+    } catch (err) {
+      onError(err instanceof Error ? err.message : "Error al actualizar");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   const handleSaveProgress = async () => {
     setSaveState("saving");
@@ -65,35 +148,15 @@ export function ObjectiveDetail({
     }
   };
 
-  const handleEditField = async (
-    field: Partial<Parameters<typeof editObjective>[1]>,
-  ) => {
-    try {
-      await editObjective(objective.id, field);
-    } catch (err) {
-      onError(err instanceof Error ? err.message : "Error al editar");
-    }
-  };
-
   const handleAddItem = async () => {
     try {
       await addItem(objective.id, {
         name: "Nuevo material",
         item_type: "guia",
       });
+      // Logic for manual save: usually adding an item is a direct API call or we wait for sync
     } catch (err) {
       onError(err instanceof Error ? err.message : "Error al agregar material");
-    }
-  };
-
-  const handleEditItem = async (
-    itemId: number,
-    data: Partial<MicItemCreate>,
-  ) => {
-    try {
-      await editItem(itemId, data);
-    } catch (err) {
-      onError(err instanceof Error ? err.message : "Error al editar material");
     }
   };
 
@@ -146,6 +209,18 @@ export function ObjectiveDetail({
             ? "✓ Guardado"
             : "Guardar progreso"}
       </button>
+      {editMode && isDirty && (
+        <button
+          onClick={handleManualUpdate}
+          disabled={isUpdating}
+          className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-60"
+        >
+          {isUpdating && (
+            <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white" />
+          )}
+          {isUpdating ? "Actualizando..." : "Actualizar objetivo"}
+        </button>
+      )}
     </div>
   );
 
@@ -158,8 +233,11 @@ export function ObjectiveDetail({
           <div className="flex items-start justify-between gap-2">
             {editMode ? (
               <input
-                defaultValue={objective.name}
-                onBlur={(e) => handleEditField({ name: e.target.value })}
+                value={localName}
+                onChange={(e) => {
+                  setLocalName(e.target.value);
+                  setIsDirty(true);
+                }}
                 className="flex-1 text-lg font-semibold text-gray-900 dark:text-white bg-transparent border-b border-gray-200 dark:border-gray-700 focus:outline-none focus:border-green-500 pb-0.5"
               />
             ) : (
@@ -183,45 +261,62 @@ export function ObjectiveDetail({
           </div>
 
           {editMode && (
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
-                <select
-                  defaultValue={objective.objective_type}
-                  onChange={(e) =>
-                    handleEditField({
-                      objective_type: e.target
-                        .value as MicObjectiveCreate["objective_type"],
-                    })
-                  }
-                  className="px-2 py-1 text-xs border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none"
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+                  <select
+                    value={localType}
+                    onChange={(e) => {
+                      setLocalType(
+                        e.target.value as MicObjectiveCreate["objective_type"],
+                      );
+                      setIsDirty(true);
+                    }}
+                    className="px-2 py-1 text-xs border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none"
+                  >
+                    <option value="teorico">Teórico</option>
+                    <option value="practico">Práctico</option>
+                    <option value="evaluativo">Evaluativo</option>
+                  </select>
+                </label>
+                <label className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={localOptional}
+                    onChange={(e) => {
+                      setLocalOptional(e.target.checked);
+                      setIsDirty(true);
+                    }}
+                    className="accent-green-600"
+                  />
+                  Optativo
+                </label>
+                <label className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={localIntra}
+                    onChange={(e) => {
+                      setLocalIntra(e.target.checked);
+                      setIsDirty(true);
+                    }}
+                    className="accent-green-600"
+                  />
+                  Intrasesión
+                </label>
+              </div>
+
+              {isDirty && (
+                <button
+                  onClick={handleManualUpdate}
+                  disabled={isUpdating}
+                  className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-60"
                 >
-                  <option value="teorico">Teórico</option>
-                  <option value="practico">Práctico</option>
-                  <option value="evaluativo">Evaluativo</option>
-                </select>
-              </label>
-              <label className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 cursor-pointer">
-                <input
-                  type="checkbox"
-                  defaultChecked={objective.is_optional}
-                  onChange={(e) =>
-                    handleEditField({ is_optional: e.target.checked })
-                  }
-                  className="accent-green-600"
-                />
-                Optativo
-              </label>
-              <label className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 cursor-pointer">
-                <input
-                  type="checkbox"
-                  defaultChecked={objective.is_intra}
-                  onChange={(e) =>
-                    handleEditField({ is_intra: e.target.checked })
-                  }
-                  className="accent-green-600"
-                />
-                Intrasesión
-              </label>
+                  {isUpdating && (
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white" />
+                  )}
+                  {isUpdating ? "Actualizando..." : "Actualizar"}
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -234,10 +329,11 @@ export function ObjectiveDetail({
             </label>
             <textarea
               key={`desc-${objective.id}`}
-              defaultValue={objective.description ?? ""}
-              onBlur={(e) =>
-                handleEditField({ description: e.target.value || null })
-              }
+              value={localDesc}
+              onChange={(e) => {
+                setLocalDesc(e.target.value);
+                setIsDirty(true);
+              }}
               rows={2}
               className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
               placeholder="Descripción del objetivo..."
@@ -259,10 +355,11 @@ export function ObjectiveDetail({
             </label>
             <textarea
               key={`crit-${objective.id}`}
-              defaultValue={objective.criteria ?? ""}
-              onBlur={(e) =>
-                handleEditField({ criteria: e.target.value || null })
-              }
+              value={localCriteria}
+              onChange={(e) => {
+                setLocalCriteria(e.target.value);
+                setIsDirty(true);
+              }}
               rows={2}
               className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
               placeholder="Criterio de cumplimiento..."
@@ -293,51 +390,63 @@ export function ObjectiveDetail({
           )}
           {editMode ? (
             <div className="space-y-2">
-              {objective.items.map((item) => (
+              {localItems.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-xl"
+                  className="p-2 bg-gray-50 dark:bg-gray-800 rounded-xl space-y-2"
                 >
-                  <select
-                    defaultValue={item.item_type}
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={item.item_type}
+                      onChange={(e) =>
+                        updateLocalItem(item.id, {
+                          item_type: e.target.value as MicItem["item_type"],
+                        })
+                      }
+                      className="text-xs px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none"
+                    >
+                      <option value="guia">Guía</option>
+                      <option value="mensaje_rapido">Mensaje rápido</option>
+                      <option value="pdf_educativo">PDF Educativo</option>
+                      <option value="video_educativo">Video Educativo</option>
+                      <option value="contenido_social">Contenido Social</option>
+                      <option value="protocolo">Protocolo</option>
+                      <option value="checklist">Checklist</option>
+                      <option value="receta">Receta</option>
+                    </select>
+                    <input
+                      value={item.name}
+                      onChange={(e) =>
+                        updateLocalItem(item.id, { name: e.target.value })
+                      }
+                      placeholder="Nombre"
+                      className="flex-1 min-w-0 text-xs px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none"
+                    />
+                    <input
+                      value={item.url ?? ""}
+                      onChange={(e) =>
+                        updateLocalItem(item.id, { url: e.target.value })
+                      }
+                      placeholder="URL (opcional)"
+                      className="w-28 text-xs px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none"
+                    />
+                    <button
+                      onClick={() => handleRemoveItem(item.id)}
+                      className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+                    >
+                      <IconTrash />
+                    </button>
+                  </div>
+                  <textarea
+                    key={`desc-item-${item.id}`}
+                    value={item.description ?? ""}
                     onChange={(e) =>
-                      handleEditItem(item.id, {
-                        item_type: e.target.value as MicItem["item_type"],
-                      })
+                      updateLocalItem(item.id, { description: e.target.value })
                     }
-                    className="text-xs px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none"
-                  >
-                    <option value="guia">Guía</option>
-                    <option value="mensaje_rapido">Mensaje rápido</option>
-                    <option value="pdf_educativo">PDF Educativo</option>
-                    <option value="video_educativo">Video Educativo</option>
-                    <option value="contenido_social">Contenido Social</option>
-                    <option value="protocolo">Protocolo</option>
-                    <option value="checklist">Checklist</option>
-                    <option value="receta">Receta</option>
-                  </select>
-                  <input
-                    defaultValue={item.name}
-                    onBlur={(e) =>
-                      handleEditItem(item.id, { name: e.target.value })
-                    }
-                    placeholder="Nombre"
-                    className="flex-1 min-w-0 text-xs px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none"
+                    placeholder="Descripción (opcional)"
+                    rows={2}
+                    className="text-xs px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none w-full resize-none"
                   />
-                  <input
-                    defaultValue={item.url ?? ""}
-                    onBlur={(e) =>
-                      handleEditItem(item.id, { url: e.target.value || null })
-                    }
-                    placeholder="URL (opcional)"
-                    className="w-28 text-xs px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none"
-                  />
-                  <button
-                    onClick={() => handleRemoveItem(item.id)}
-                    className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
-                  >
-                    <IconTrash />
-                  </button>
                 </div>
               ))}
               <button
@@ -385,7 +494,7 @@ export function ObjectiveDetail({
         </div>
 
         {/* Footer — no sticky en desktop */}
-        {!stickyFooter && (
+        {!stickyFooter && !editMode && (
           <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
             {progressFooter}
           </div>
@@ -393,7 +502,7 @@ export function ObjectiveDetail({
       </div>
 
       {/* Footer sticky en móvil */}
-      {stickyFooter && (
+      {stickyFooter && !editMode && (
         <div className="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 p-4 space-y-3 md:hidden">
           {progressFooter}
         </div>
