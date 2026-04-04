@@ -205,17 +205,6 @@ const PatientDayPage: React.FC = () => {
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
               type="button"
-              onClick={() => navigate(`/patients/${uuid}/mic`, { state: { customer } })}
-              className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-medium rounded-xl bg-green-600 hover:bg-green-700 text-white transition-colors"
-              aria-label="Ir al MIC del paciente"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-              </svg>
-              MIC
-            </button>
-            <button
-              type="button"
               onClick={handleCopyClaudePrompt}
               disabled={copyingPrompt}
               className="flex items-center gap-1.5 px-3 min-h-[36px] text-xs font-medium rounded-xl bg-violet-600 hover:bg-violet-700 text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"

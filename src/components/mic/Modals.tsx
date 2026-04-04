@@ -121,3 +121,63 @@ export function EditNameModal({
     </div>
   );
 }
+
+export function ConfirmDiscardModal({
+  onConfirm,
+  onSave,
+  onClose,
+}: {
+  onConfirm: () => void;
+  onSave: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 w-80 space-y-4 border border-gray-100 dark:border-gray-800">
+        <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto">
+          <svg
+            className="w-6 h-6 text-amber-600 dark:text-amber-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+        </div>
+        <div className="text-center space-y-2">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+            ¿Descartar cambios?
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Tienes cambios sin guardar. ¿Qué deseas hacer?
+          </p>
+        </div>
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={onSave}
+            className="w-full px-4 py-2.5 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors shadow-sm"
+          >
+            Guardar y salir
+          </button>
+          <button
+            onClick={onConfirm}
+            className="w-full px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
+          >
+            Descartar cambios
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full px-4 py-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+          >
+            Seguir editando
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

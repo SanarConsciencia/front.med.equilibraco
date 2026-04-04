@@ -261,6 +261,20 @@ const Customers: React.FC = () => {
                       className="flex-1 sm:flex-none py-2 h-auto text-sm"
                       onClick={() =>
                         navigate(
+                          `/patients/${selectedCustomer.customer_uuid}/mic`,
+                          {
+                            state: { customer: selectedCustomer },
+                          },
+                        )
+                      }
+                    >
+                      Ver MIC
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 sm:flex-none py-2 h-auto text-sm"
+                      onClick={() =>
+                        navigate(
                           `/patients/${selectedCustomer.customer_uuid}/day`,
                           {
                             state: { customer: selectedCustomer },

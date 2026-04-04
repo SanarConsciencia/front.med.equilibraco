@@ -144,7 +144,11 @@ export function MicTree({
               initial: pillar.name,
               onSave: async (v) => {
                 try {
-                  await editPillar(pillar.id, { name: v });
+                  await editPillar(pillar.id, {
+                    name: v,
+                    description: (pillar as any).description ?? null,
+                    order: pillar.order,
+                  });
                 } catch (err) {
                   onError(err instanceof Error ? err.message : "Error");
                 }
@@ -172,7 +176,11 @@ export function MicTree({
               initial: phase.name,
               onSave: async (v) => {
                 try {
-                  await editPhase(phase.id, { name: v });
+                  await editPhase(phase.id, {
+                    name: v,
+                    description: (phase as any).description ?? null,
+                    order: phase.order,
+                  });
                 } catch (err) {
                   onError(err instanceof Error ? err.message : "Error");
                 }
@@ -203,7 +211,15 @@ export function MicTree({
               initial: obj.name,
               onSave: async (v) => {
                 try {
-                  await editObjective(obj.id, { name: v });
+                  await editObjective(obj.id, {
+                    name: v,
+                    objective_type: obj.objective_type,
+                    description: obj.description ?? null,
+                    is_optional: obj.is_optional,
+                    is_intra: obj.is_intra,
+                    criteria: obj.criteria ?? null,
+                    order: obj.order,
+                  });
                 } catch (err) {
                   onError(err instanceof Error ? err.message : "Error");
                 }
@@ -254,7 +270,11 @@ export function MicTree({
                       initial: pillar.name,
                       onSave: async (v) => {
                         try {
-                          await editPillar(pillar.id, { name: v });
+                          await editPillar(pillar.id, {
+                            name: v,
+                            description: (pillar as any).description ?? null,
+                            order: pillar.order,
+                          });
                         } catch (err) {
                           onError(err instanceof Error ? err.message : "Error");
                         }
@@ -318,7 +338,12 @@ export function MicTree({
                               initial: phase.name,
                               onSave: async (v) => {
                                 try {
-                                  await editPhase(phase.id, { name: v });
+                                  await editPhase(phase.id, {
+                                    name: v,
+                                    description:
+                                      (phase as any).description ?? null,
+                                    order: phase.order,
+                                  });
                                 } catch (err) {
                                   onError(
                                     err instanceof Error
@@ -424,6 +449,13 @@ export function MicTree({
                                         try {
                                           await editObjective(obj.id, {
                                             name: v,
+                                            objective_type: obj.objective_type,
+                                            description:
+                                              obj.description ?? null,
+                                            is_optional: obj.is_optional,
+                                            is_intra: obj.is_intra,
+                                            criteria: obj.criteria ?? null,
+                                            order: obj.order,
                                           });
                                         } catch (err) {
                                           onError(
