@@ -13,7 +13,8 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  html, :root {
+  html,
+  :root {
     width: 100%;
     height: 100%;
   }
@@ -27,4 +28,12 @@
   }
 
   /* Let Tailwind handle the rest with dark mode classes */
+}
+
+@layer utilities {
+  @media (display-mode: standalone) {
+    .standalone-pb-safe {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+  }
 }

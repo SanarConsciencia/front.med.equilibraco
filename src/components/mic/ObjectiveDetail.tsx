@@ -218,45 +218,45 @@ export function ObjectiveDetail({
 
   const progressFooter = (
     <div className="space-y-3">
-      {/* Status pill selector */}
+      {/* Status selector */}
       <div className="space-y-1.5">
-        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
           Estado
-        </p>
-        <div className="grid grid-cols-2 gap-1.5">
-          {(
-            [
-              { value: "pending", label: "Pendiente" },
-              { value: "en_curso", label: "En curso" },
-              { value: "finalizada", label: "Finalizada" },
-              { value: "abandonada", label: "Abandonada" },
-            ] as const
-          ).map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => setStatus(opt.value)}
-              className={`text-xs font-bold px-3 py-2 rounded-xl border transition-all ${
-                status === opt.value
-                  ? opt.value === "pending"
-                    ? "border-gray-500 bg-gray-100 text-gray-600"
-                    : opt.value === "en_curso"
-                      ? "border-kiwi-500 bg-kiwi-500/20 text-kiwi-600"
-                      : opt.value === "finalizada"
-                        ? "border-green-500 bg-green-100 text-green-700"
-                        : "border-red-400 bg-red-100 text-red-600"
-                  : opt.value === "pending"
-                    ? "border-gray-300 bg-gray-100 text-gray-600"
-                    : opt.value === "en_curso"
-                      ? "border-kiwi-500/40 bg-kiwi-500/10 text-kiwi-600"
-                      : opt.value === "finalizada"
-                        ? "border-green-400 bg-green-50 text-green-700"
-                        : "border-red-300 bg-red-50 text-red-600"
-              }`}
+        </label>
+        <div className="relative">
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value as typeof status)}
+            className={`w-full appearance-none px-3 py-2 text-sm font-bold rounded-xl border transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-opacity-50 ${
+              status === "pending"
+                ? "border-gray-300 bg-gray-50 text-gray-600 focus:ring-gray-400"
+                : status === "en_curso"
+                  ? "border-kiwi-500/40 bg-kiwi-500/5 text-kiwi-600 focus:ring-kiwi-500"
+                  : status === "finalizada"
+                    ? "border-green-400 bg-green-50 text-green-700 focus:ring-green-500"
+                    : "border-red-300 bg-red-50 text-red-600 focus:ring-red-400"
+            }`}
+          >
+            <option value="pending">Pendiente</option>
+            <option value="en_curso">En curso</option>
+            <option value="finalizada">Finalizada</option>
+            <option value="abandonada">Abandonada</option>
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
             >
-              {opt.label}
-            </button>
-          ))}
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </div>
         </div>
       </div>
       <div className="space-y-1">
