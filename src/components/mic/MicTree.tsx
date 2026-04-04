@@ -71,6 +71,28 @@ export function MicTree({
     });
   };
 
+  const expandPillarWithPhases = (pillar: MicPillarWithPhases) => {
+    setExpandedPillars((prev) => new Set(prev).add(pillar.id));
+    setExpandedPhases((prev) => {
+      const next = new Set(prev);
+      pillar.phases.forEach((ph) => next.add(ph.id));
+      return next;
+    });
+  };
+
+  const collapsePillarWithPhases = (pillar: MicPillarWithPhases) => {
+    setExpandedPillars((prev) => {
+      const next = new Set(prev);
+      next.delete(pillar.id);
+      return next;
+    });
+    setExpandedPhases((prev) => {
+      const next = new Set(prev);
+      pillar.phases.forEach((ph) => next.delete(ph.id));
+      return next;
+    });
+  };
+
   const togglePhase = (id: number) => {
     setExpandedPhases((prev) => {
       const next = new Set(prev);
@@ -78,6 +100,18 @@ export function MicTree({
       else next.add(id);
       return next;
     });
+  };
+
+  const expandAll = () => {
+    setExpandedPillars(new Set(pillars.map((p) => p.id)));
+    setExpandedPhases(
+      new Set(pillars.flatMap((p) => p.phases.map((ph) => ph.id))),
+    );
+  };
+
+  const collapseAll = () => {
+    setExpandedPillars(new Set());
+    setExpandedPhases(new Set());
   };
 
   const handleAddPillar = async () => {
@@ -236,7 +270,29 @@ export function MicTree({
   };
 
   return (
-    <div className="space-y-1 py-2">
+    <div className="space-y-1 py-1">
+      {/* Global Controls - Sticky with backdrop blur */}
+      <div className="sticky top-0 z-20 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm flex items-center justify-between px-3 py-2 border-b border-gray-100 dark:border-gray-800 mb-1">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+          😎
+        </span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={expandAll}
+            className="text-[10px] font-medium text-green-600 hover:text-green-700 transition-colors"
+          >
+            Expandir todo
+          </button>
+          <span className="text-gray-300 dark:text-gray-700">|</span>
+          <button
+            onClick={collapseAll}
+            className="text-[10px] font-medium text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            Colapsar todo
+          </button>
+        </div>
+      </div>
+
       {pillars.map((pillar) => (
         <div key={pillar.id}>
           <div
@@ -261,6 +317,33 @@ export function MicTree({
                 {pillar.name}
               </span>
             </button>
+
+            {/* Pillar Helper Buttons */}
+            <div className="flex items-center gap-1 px-1">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  expandPillarWithPhases(pillar);
+                }}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-[13px] text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 font-bold transition-all"
+                title="Expandir todas las fases"
+              >
+                +
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  collapsePillarWithPhases(pillar);
+                }}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-[13px] text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 font-bold transition-all"
+                title="Colapsar todas las fases"
+              >
+                −
+              </button>
+            </div>
+
             {editMode && !mobileMode && (
               <div className="flex items-center gap-0.5 flex-shrink-0">
                 <button
