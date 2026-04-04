@@ -116,9 +116,16 @@ export interface MicPillarResponse {
 // PROGRESS
 // ============================================================
 
+export type MicProgressStatus =
+  | "pending"
+  | "en_curso"
+  | "finalizada"
+  | "abandonada";
+
 export interface MicProgressUpdate {
   completed: boolean;
   notes?: string | null;
+  status: MicProgressStatus;
 }
 
 export interface MicProgressResponse {
@@ -129,6 +136,7 @@ export interface MicProgressResponse {
   completed: boolean;
   completed_at: string | null;
   notes: string | null;
+  status: MicProgressStatus;
   created_at: string;
   updated_at: string | null;
 }

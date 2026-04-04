@@ -65,6 +65,18 @@ interface MicStore {
   addItem: (objectiveId: number, data: MicItemCreate) => Promise<void>;
   editItem: (id: number, data: Partial<MicItemCreate>) => Promise<void>;
   removeItem: (id: number) => Promise<void>;
+
+  // ── Visibilidad de items ──────────────────────────────────────────────────
+  fetchItemVisibility: (
+    customerUuid: string,
+    token: string,
+  ) => Promise<Array<{ id: number }>>;
+  toggleItemVisibility: (
+    customerUuid: string,
+    itemId: number,
+    isVisible: boolean,
+    token: string,
+  ) => Promise<void>;
 }
 
 function requireAdminKey(): string {
@@ -240,5 +252,20 @@ export const useMicStore = create<MicStore>((set, get) => ({
     const { _customerUuid, _token } = get();
     if (_customerUuid && _token)
       await get().loadProgress(_customerUuid, _token);
+  },
+
+  // ── Visibilidad de items ──────────────────────────────────────────────────
+
+  fetchItemVisibility: async (customerUuid, token) => {
+    return micService.getVisibleItems(customerUuid, token);
+  },
+
+  toggleItemVisibility: async (customerUuid, itemId, isVisible, token) => {
+    await micService.updateItemVisibility(
+      customerUuid,
+      itemId,
+      isVisible,
+      token,
+    );
   },
 }));
