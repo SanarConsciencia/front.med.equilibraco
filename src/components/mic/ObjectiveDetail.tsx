@@ -56,6 +56,9 @@ export function ObjectiveDetail({
     {},
   );
   const [togglingItemId, setTogglingItemId] = useState<number | null>(null);
+  const [expandedItems, setExpandedItems] = useState<Record<number, boolean>>(
+    {},
+  );
 
   // --- LOCAL EDIT STATE ---
   const [localName, setLocalName] = useState(objective.name);
@@ -513,16 +516,61 @@ export function ObjectiveDetail({
                       <IconTrash />
                     </button>
                   </div>
-                  <textarea
-                    key={`desc-item-${item.id}`}
-                    value={item.description ?? ""}
-                    onChange={(e) =>
-                      updateLocalItem(item.id, { description: e.target.value })
-                    }
-                    placeholder="Descripción (opcional)"
-                    rows={2}
-                    className="text-xs px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none w-full resize-none"
-                  />
+                  <div className="relative group">
+                    <textarea
+                      key={`desc-item-${item.id}`}
+                      value={item.description ?? ""}
+                      onChange={(e) =>
+                        updateLocalItem(item.id, {
+                          description: e.target.value,
+                        })
+                      }
+                      placeholder="Descripción (opcional)"
+                      rows={expandedItems[item.id] ? 14 : 4}
+                      className="text-xs px-2 py-1 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none w-full resize-none transition-[rows] duration-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedItems((prev) => ({
+                          ...prev,
+                          [item.id]: !prev[item.id],
+                        }))
+                      }
+                      className="absolute bottom-2 right-2 p-1 rounded-md bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 shadow-sm opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                      title={expandedItems[item.id] ? "Contraer" : "Expandir"}
+                    >
+                      {expandedItems[item.id] ? (
+                        <svg
+                          className="w-3.5 h-3.5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 15l7-7 7 7"
+                          />
+                        </svg>
+                      ) : (
+                        <svg
+                          className="w-3.5 h-3.5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
               ))}
               <button

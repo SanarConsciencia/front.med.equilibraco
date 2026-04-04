@@ -81,19 +81,35 @@ const MicPage: React.FC = () => {
   const [isMaximized, setIsMaximized] = useState(false);
   const isResizing = useRef(false);
 
+  // Resize logic for MIC Sidebar
+  const micSidebarWidth = useUiStore((s) => s.micSidebarWidth);
+  const setMicSidebarWidth = useUiStore((s) => s.setMicSidebarWidth);
+  const isResizingSidebar = useRef(false);
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing.current) return;
-      // Calculate new height from bottom of screen
-      const newHeight = window.innerHeight - e.clientY;
-      // Clamp between 100px and 80% of screen height
-      if (newHeight > 100 && newHeight < window.innerHeight * 0.8) {
-        setCompliancePanelHeight(newHeight);
+      if (isResizing.current) {
+        // Calculate new height from bottom of screen
+        const newHeight = window.innerHeight - e.clientY;
+        // Clamp between 100px and 80% of screen height
+        if (newHeight > 100 && newHeight < window.innerHeight * 0.8) {
+          setCompliancePanelHeight(newHeight);
+        }
+      }
+
+      if (isResizingSidebar.current) {
+        // Calculate new width from left side
+        const newWidth = e.clientX;
+        // Clamp between 200px and 600px
+        if (newWidth > 200 && newWidth < 600) {
+          setMicSidebarWidth(newWidth);
+        }
       }
     };
 
     const handleMouseUp = () => {
       isResizing.current = false;
+      isResizingSidebar.current = false;
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
@@ -104,7 +120,7 @@ const MicPage: React.FC = () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [setCompliancePanelHeight]);
+  }, [setCompliancePanelHeight, setMicSidebarWidth]);
 
   // Mobile: floating expandable bottom bar
   const [mobileComplianceOpen, setMobileComplianceOpen] = useState(false);
@@ -321,31 +337,50 @@ const MicPage: React.FC = () => {
           {/* -- DESKTOP layout ----------------------------------------------- */}
           <div className="hidden md:flex flex-1 overflow-hidden">
             {/* Sidebar */}
-            <div className="w-[280px] flex-shrink-0 border-r border-gray-100 dark:border-gray-800 overflow-y-auto bg-white dark:bg-gray-900">
-              {pillars.length === 0 ? (
-                <div className="p-6 text-center space-y-2">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    No hay pilares configurados. Activa el modo edición para
-                    comenzar.
-                  </p>
-                  {!editMode && (
-                    <button
-                      onClick={() => setShowEditModal(true)}
-                      className="text-xs text-green-600 hover:text-green-700 font-medium"
-                    >
-                      Activar modo edición
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <MicTree
-                  pillars={pillars}
-                  selectedObjectiveId={selectedObjectiveId}
-                  editMode={editMode}
-                  onSelect={selectObjective}
-                  onError={(msg) => showToast(msg, "error")}
-                />
-              )}
+            <div
+              style={{ width: `${micSidebarWidth}px` }}
+              className="flex-shrink-0 border-r border-gray-100 dark:border-gray-800 flex flex-col overflow-hidden bg-white dark:bg-gray-900 group relative"
+            >
+              {/* Resize Handle (Vertical) */}
+              <div
+                className="absolute top-0 right-0 bottom-0 w-2 cursor-col-resize hover:bg-green-500/30 z-30 transition-colors group/sidebar"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  isResizingSidebar.current = true;
+                  document.body.style.cursor = "col-resize";
+                  document.body.style.userSelect = "none";
+                }}
+              >
+                {/* Visual Pill Indicator (iPhone style) */}
+                <div className="absolute top-1/2 -translate-y-1/2 right-0.5 w-1 h-8 bg-gray-600 dark:bg-gray-700 rounded-full opacity-60 group-hover/sidebar:bg-green-500 group-hover/sidebar:opacity-100 transition-all" />
+              </div>
+
+              <div className="flex-1 overflow-y-auto">
+                {pillars.length === 0 ? (
+                  <div className="p-6 text-center space-y-2">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      No hay pilares configurados. Activa el modo edición para
+                      comenzar.
+                    </p>
+                    {!editMode && (
+                      <button
+                        onClick={() => setShowEditModal(true)}
+                        className="text-xs text-green-600 hover:text-green-700 font-medium"
+                      >
+                        Activar modo edición
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <MicTree
+                    pillars={pillars}
+                    selectedObjectiveId={selectedObjectiveId}
+                    editMode={editMode}
+                    onSelect={selectObjective}
+                    onError={(msg) => showToast(msg, "error")}
+                  />
+                )}
+              </div>
             </div>
 
             {/* Panel derecho */}
@@ -391,14 +426,17 @@ const MicPage: React.FC = () => {
               {/* Resize Handle (VS Code terminal style) */}
               {compliancePanelOpen && !isMaximized && (
                 <div
-                  className="absolute top-0 left-0 right-0 h-1 cursor-ns-resize hover:bg-green-500/30 z-20 transition-colors"
+                  className="absolute top-0 left-0 right-0 h-1.5 cursor-ns-resize hover:bg-green-500/30 z-20 transition-colors group/compliance"
                   onMouseDown={(e) => {
                     e.preventDefault();
                     isResizing.current = true;
                     document.body.style.cursor = "ns-resize";
                     document.body.style.userSelect = "none";
                   }}
-                />
+                >
+                  {/* Visual Pill Indicator (iPhone style) */}
+                  <div className="absolute left-1/2 -translate-x-1/2 top-0.5 w-8 h-1 bg-gray-200 dark:bg-gray-700 rounded-full opacity-60 group-hover/compliance:bg-green-500 group-hover/compliance:opacity-100 transition-all" />
+                </div>
               )}
 
               {/* Panel header - click to toggle */}
