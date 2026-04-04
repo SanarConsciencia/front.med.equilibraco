@@ -242,6 +242,34 @@ export async function deleteItem(id: number, adminKey: string): Promise<void> {
   }
 }
 
+// ── Visibilidad de items ─────────────────────────────────────────────────────
+
+export async function getVisibleItems(
+  customerUuid: string,
+  token: string,
+): Promise<Array<{ id: number }>> {
+  return jsonFetch<Array<{ id: number }>>(
+    `${BASE}/api/v1/mic/customers/${customerUuid}/items/visible`,
+    { headers: authHeaders(token) },
+  );
+}
+
+export async function updateItemVisibility(
+  customerUuid: string,
+  itemId: number,
+  isVisible: boolean,
+  token: string,
+): Promise<void> {
+  await jsonFetch<unknown>(
+    `${BASE}/api/v1/mic/customers/${customerUuid}/items/${itemId}/visibility`,
+    {
+      method: "PUT",
+      headers: authHeaders(token),
+      body: JSON.stringify({ is_visible: isVisible }),
+    },
+  );
+}
+
 // ── Snapshots de scores y cumplimiento ───────────────────────────────────────
 
 export async function getCustomerSnapshots(

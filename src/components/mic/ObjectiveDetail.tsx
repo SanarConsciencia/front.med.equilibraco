@@ -8,6 +8,7 @@ import type {
 import { useMicStore } from "../../stores/micStore";
 import { ObjectiveTypeBadge, ItemTypeBadge } from "./Badges";
 import { IconTrash, IconPlus } from "./Icons";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { ItemDetailModal } from "./ItemDetailModal";
 
 interface ObjectiveDetailProps {
@@ -31,19 +32,30 @@ export function ObjectiveDetail({
   onSuccess,
   stickyFooter = false,
 }: ObjectiveDetailProps) {
-  const { updateProgress, editObjective, addItem, editItem, removeItem } =
-    useMicStore();
+  const {
+    updateProgress,
+    editObjective,
+    addItem,
+    editItem,
+    removeItem,
+    fetchItemVisibility,
+    toggleItemVisibility,
+  } = useMicStore();
   const editModeStore = useMicStore((s) => s.editMode);
   const setIsDirtyStore = useMicStore((s) => s.setIsDirty);
 
-  const [completed, setCompleted] = useState(
-    objective.progress?.completed ?? false,
-  );
+  const [status, setStatus] = useState<
+    "pending" | "en_curso" | "finalizada" | "abandonada"
+  >(objective.progress?.status ?? "pending");
   const [notes, setNotes] = useState(objective.progress?.notes ?? "");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">(
     "idle",
   );
   const [selectedItem, setSelectedItem] = useState<MicItem | null>(null);
+  const [itemVisibility, setItemVisibility] = useState<Record<number, boolean>>(
+    {},
+  );
+  const [togglingItemId, setTogglingItemId] = useState<number | null>(null);
 
   // --- LOCAL EDIT STATE ---
   const [localName, setLocalName] = useState(objective.name);
@@ -65,7 +77,7 @@ export function ObjectiveDetail({
 
   // Sync when objective changes
   useEffect(() => {
-    setCompleted(objective.progress?.completed ?? false);
+    setStatus(objective.progress?.status ?? "pending");
     setNotes(objective.progress?.notes ?? "");
     setSaveState("idle");
 
@@ -80,7 +92,7 @@ export function ObjectiveDetail({
     setIsDirty(false);
   }, [
     objective.id,
-    objective.progress?.completed,
+    objective.progress?.status,
     objective.progress?.notes,
     objective.name,
     objective.objective_type,
@@ -97,6 +109,36 @@ export function ObjectiveDetail({
       prev.map((it) => (it.id === itemId ? { ...it, ...field } : it)),
     );
     setIsDirty(true);
+  };
+
+  // Load item visibility (read mode only)
+  useEffect(() => {
+    if (editMode) return;
+    void (async () => {
+      try {
+        const data = await fetchItemVisibility(customerUuid, token);
+        const map: Record<number, boolean> = {};
+        for (const it of data) {
+          map[it.id] = true;
+        }
+        setItemVisibility(map);
+      } catch {
+        // ignore
+      }
+    })();
+  }, [objective.id, customerUuid, editMode, token, fetchItemVisibility]);
+
+  const handleToggleVisibility = async (itemId: number) => {
+    const current = itemVisibility[itemId] ?? false;
+    setTogglingItemId(itemId);
+    try {
+      await toggleItemVisibility(customerUuid, itemId, !current, token);
+      setItemVisibility((prev) => ({ ...prev, [itemId]: !current }));
+    } catch {
+      // no change on error
+    } finally {
+      setTogglingItemId(null);
+    }
   };
 
   const handleManualUpdate = async () => {
@@ -137,7 +179,11 @@ export function ObjectiveDetail({
   const handleSaveProgress = async () => {
     setSaveState("saving");
     try {
-      const data: MicProgressUpdate = { completed, notes: notes || null };
+      const data: MicProgressUpdate = {
+        status,
+        notes: notes || null,
+        completed: status === "finalizada",
+      };
       await updateProgress(customerUuid, objective.id, data, token);
       setSaveState("saved");
       setTimeout(() => setSaveState("idle"), 2000);
@@ -172,17 +218,47 @@ export function ObjectiveDetail({
 
   const progressFooter = (
     <div className="space-y-3">
-      <label className="flex items-center gap-3 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={completed}
-          onChange={(e) => setCompleted(e.target.checked)}
-          className="w-4 h-4 accent-green-600 cursor-pointer"
-        />
-        <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
-          Marcar como completado
-        </span>
-      </label>
+      {/* Status pill selector */}
+      <div className="space-y-1.5">
+        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+          Estado
+        </p>
+        <div className="grid grid-cols-2 gap-1.5">
+          {(
+            [
+              { value: "pending", label: "Pendiente" },
+              { value: "en_curso", label: "En curso" },
+              { value: "finalizada", label: "Finalizada" },
+              { value: "abandonada", label: "Abandonada" },
+            ] as const
+          ).map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setStatus(opt.value)}
+              className={`text-xs font-bold px-3 py-2 rounded-xl border transition-all ${
+                status === opt.value
+                  ? opt.value === "pending"
+                    ? "border-gray-500 bg-gray-100 text-gray-600"
+                    : opt.value === "en_curso"
+                      ? "border-kiwi-500 bg-kiwi-500/20 text-kiwi-600"
+                      : opt.value === "finalizada"
+                        ? "border-green-500 bg-green-100 text-green-700"
+                        : "border-red-400 bg-red-100 text-red-600"
+                  : opt.value === "pending"
+                    ? "border-gray-300 bg-gray-100 text-gray-600"
+                    : opt.value === "en_curso"
+                      ? "border-kiwi-500/40 bg-kiwi-500/10 text-kiwi-600"
+                      : opt.value === "finalizada"
+                        ? "border-green-400 bg-green-50 text-green-700"
+                        : "border-red-300 bg-red-50 text-red-600"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="space-y-1">
         <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
           Notas del médico
@@ -460,34 +536,57 @@ export function ObjectiveDetail({
           ) : (
             <div className="flex flex-wrap gap-2">
               {objective.items.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setSelectedItem(item)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors text-left ${
-                    item.description || item.url
-                      ? "border-gray-200 dark:border-gray-700 hover:border-green-400 hover:text-green-700 dark:hover:text-green-400 cursor-pointer"
-                      : "border-gray-200 dark:border-gray-700 cursor-default"
-                  } bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300`}
-                >
-                  <ItemTypeBadge type={item.item_type} />
-                  {item.name}
-                  {(item.description || item.url) && (
-                    <svg
-                      className="w-3 h-3 text-gray-400 flex-shrink-0"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  )}
-                </button>
+                <div key={item.id} className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedItem(item)}
+                    className={`flex-1 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors text-left ${
+                      item.description || item.url
+                        ? "border-gray-200 dark:border-gray-700 hover:border-green-400 hover:text-green-700 dark:hover:text-green-400 cursor-pointer"
+                        : "border-gray-200 dark:border-gray-700 cursor-default"
+                    } bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300`}
+                  >
+                    <ItemTypeBadge type={item.item_type} />
+                    {item.name}
+                    {(item.description || item.url) && (
+                      <svg
+                        className="w-3 h-3 text-gray-400 flex-shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void handleToggleVisibility(item.id);
+                    }}
+                    disabled={togglingItemId === item.id}
+                    title={
+                      itemVisibility[item.id]
+                        ? "Visible para el paciente"
+                        : "No visible para el paciente"
+                    }
+                    className="flex-shrink-0 p-1 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40"
+                  >
+                    {togglingItemId === item.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
+                    ) : itemVisibility[item.id] ? (
+                      <Eye className="w-3.5 h-3.5 text-kiwi-500" />
+                    ) : (
+                      <EyeOff className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600" />
+                    )}
+                  </button>
+                </div>
               ))}
             </div>
           )}
