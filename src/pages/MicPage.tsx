@@ -158,7 +158,7 @@ const MicPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen md:h-screen md:overflow-hidden bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <div className="min-h-screen md:h-screen md:overflow-hidden bg-gray-50 dark:bg-gray-900 flex flex-col standalone-pb-safe">
       <ToastContainer toasts={toasts} />
 
       {/* Top bar */}
