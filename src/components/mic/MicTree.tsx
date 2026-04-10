@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type {
   MicPillarWithPhases,
   MicPhaseWithObjectives,
@@ -14,9 +14,12 @@ import {
 } from "./Icons";
 import { BottomSheet } from "./BottomSheet";
 import { EditNameModal } from "./Modals";
+import { ProtocolCard } from "./ProtocolCard";
 
 interface MicTreeProps {
   pillars: MicPillarWithPhases[];
+  customerId: string;
+  token: string;
   selectedObjectiveId: number | null;
   editMode: boolean;
   onSelect: (objId: number, pillarId: number, phaseId: number) => void;
@@ -26,6 +29,8 @@ interface MicTreeProps {
 
 export function MicTree({
   pillars,
+  customerId,
+  token,
   selectedObjectiveId,
   editMode,
   onSelect,
@@ -43,6 +48,10 @@ export function MicTree({
     editObjective,
     removeObjective,
     setMobileView,
+    universalProtocols,
+    pillarProtocols,
+    loadUniversalProtocols,
+    loadProtocolsForPillar,
   } = useMicStore();
 
   const [expandedPillars, setExpandedPillars] = useState<Set<number>>(
@@ -51,6 +60,7 @@ export function MicTree({
   const [expandedPhases, setExpandedPhases] = useState<Set<number>>(
     () => new Set(pillars.flatMap((p) => p.phases.map((ph) => ph.id))),
   );
+  const [showUniversalProtocols, setShowUniversalProtocols] = useState(false);
 
   const [sheet, setSheet] = useState<{
     options: { label: string; onClick: () => void; danger?: boolean }[];
@@ -62,11 +72,19 @@ export function MicTree({
     onSave: (v: string) => Promise<void>;
   } | null>(null);
 
-  const togglePillar = (id: number) => {
+  useEffect(() => {
+    loadUniversalProtocols();
+  }, [loadUniversalProtocols]);
+
+  const togglePillar = (pillar: MicPillarWithPhases) => {
     setExpandedPillars((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(pillar.id)) {
+        next.delete(pillar.id);
+      } else {
+        next.add(pillar.id);
+        loadProtocolsForPillar(pillar.name);
+      }
       return next;
     });
   };
@@ -180,6 +198,7 @@ export function MicTree({
                 try {
                   await editPillar(pillar.id, {
                     name: v,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     description: (pillar as any).description ?? null,
                     order: pillar.order,
                   });
@@ -212,6 +231,7 @@ export function MicTree({
                 try {
                   await editPhase(phase.id, {
                     name: v,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     description: (phase as any).description ?? null,
                     order: phase.order,
                   });
@@ -293,6 +313,82 @@ export function MicTree({
         </div>
       </div>
 
+      {/* Protocolos Universales */}
+      <div className="mb-4">
+        <button
+          onClick={() => setShowUniversalProtocols(!showUniversalProtocols)}
+          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border transition-all ${
+            showUniversalProtocols
+              ? "bg-indigo-50 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800"
+              : "bg-white border-gray-100 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-800"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <div
+              className={`p-1.5 rounded-lg ${
+                showUniversalProtocols
+                  ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400"
+                  : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+              }`}
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                />
+              </svg>
+            </div>
+            <span
+              className={`text-[12px] font-bold ${
+                showUniversalProtocols
+                  ? "text-indigo-900 dark:text-indigo-100"
+                  : "text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              Protocolos universales ({universalProtocols.length})
+            </span>
+          </div>
+          <span
+            className={
+              showUniversalProtocols ? "text-indigo-400" : "text-gray-400"
+            }
+          >
+            {showUniversalProtocols ? (
+              <IconChevronDown />
+            ) : (
+              <IconChevronRight />
+            )}
+          </span>
+        </button>
+
+        {showUniversalProtocols && (
+          <div className="mt-1.5 ml-0 space-y-0.5 animate-in fade-in slide-in-from-top-1 duration-200">
+            {universalProtocols.length > 0 ? (
+              universalProtocols.map((protocol) => (
+                <ProtocolCard
+                  key={protocol.id}
+                  protocol={protocol}
+                  customerId={customerId}
+                  token={token}
+                  editMode={editMode}
+                />
+              ))
+            ) : (
+              <p className="text-[10px] text-gray-400 italic px-4 py-2">
+                No hay protocolos generales disponibles.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
       {pillars.map((pillar) => (
         <div key={pillar.id}>
           <div
@@ -303,7 +399,7 @@ export function MicTree({
             }`}
           >
             <button
-              onClick={() => togglePillar(pillar.id)}
+              onClick={() => togglePillar(pillar)}
               className="flex items-center gap-1.5 flex-1 min-w-0 text-left"
             >
               <span className="text-gray-400 flex-shrink-0">
@@ -355,6 +451,7 @@ export function MicTree({
                         try {
                           await editPillar(pillar.id, {
                             name: v,
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             description: (pillar as any).description ?? null,
                             order: pillar.order,
                           });
@@ -424,6 +521,7 @@ export function MicTree({
                                   await editPhase(phase.id, {
                                     name: v,
                                     description:
+                                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                       (phase as any).description ?? null,
                                     order: phase.order,
                                   });
@@ -598,6 +696,49 @@ export function MicTree({
                   Agregar fase
                 </button>
               )}
+
+              {/* Protocolos específicos del pilar - DESPUÉS de fases y objetivos */}
+              <div className="mt-4 pb-2 space-y-1">
+                <div className="px-3 pb-1 flex items-center gap-2">
+                  <div className="p-1 px-1.5 rounded bg-indigo-50 dark:bg-indigo-900/40 text-indigo-500">
+                    <svg
+                      className="w-3 h-3"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-400 dark:text-indigo-500">
+                    Protocolos {pillar.name} (
+                    {pillarProtocols[pillar.name]?.length || 0})
+                  </span>
+                  <div className="h-px flex-1 bg-indigo-50 dark:bg-indigo-900/20" />
+                </div>
+                <div className="space-y-0.5">
+                  {pillarProtocols[pillar.name]?.length > 0 ? (
+                    pillarProtocols[pillar.name].map((protocol) => (
+                      <ProtocolCard
+                        key={protocol.id}
+                        protocol={protocol}
+                        customerId={customerId}
+                        token={token}
+                        editMode={editMode}
+                      />
+                    ))
+                  ) : (
+                    <p className="text-[10px] text-gray-400 italic px-4 py-2">
+                      No hay protocolos específicos para este pilar.
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </div>
