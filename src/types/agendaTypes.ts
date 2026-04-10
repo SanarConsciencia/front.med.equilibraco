@@ -156,7 +156,8 @@ export const DIAS_SEMANA: { dia_semana: number; dia_nombre: string }[] = [
 ];
 
 export const DURACION_ASISTENCIAL_DEFAULT = 40;
-export const DURACION_DESCUBRIMIENTO_DEFAULT = 20;
+export const DURACION_DESCUBRIMIENTO_DEFAULT = 40;
+export const BUFFER_DESCUBRIMIENTO_DEFAULT = 20;
 
 export const ESTADO_CITA_LABEL: Record<EstadoCita, string> = {
   PENDIENTE: "Pendiente",
