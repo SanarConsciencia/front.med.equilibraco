@@ -60,7 +60,7 @@ const CambiarEstadoView: React.FC<{
       </p>
 
       <div className="space-y-2">
-        {transiciones.map((estado) => (
+        {(transiciones || []).map((estado) => (
           <button
             key={estado}
             type="button"
