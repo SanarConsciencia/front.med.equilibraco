@@ -551,7 +551,7 @@ const CitaDetailModal: React.FC<Props> = ({ cita, onClose }) => {
                         </div>
 
                         <div className="space-y-3">
-                          {evaluacion.respuestas.map((r, i) => (
+                          {(evaluacion.respuestas || []).map((r, i) => (
                             <div key={i}>
                               <p className="text-xs font-medium text-gray-600 dark:text-gray-300">
                                 {r.pregunta}
