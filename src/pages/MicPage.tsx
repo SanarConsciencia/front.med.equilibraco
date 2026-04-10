@@ -54,6 +54,7 @@ const MicPage: React.FC = () => {
     selectObjective,
     deactivateEditMode,
     setMobileView,
+    loadUniversalProtocols,
   } = useMicStore();
 
   const [showEditModal, setShowEditModal] = useState(false);
@@ -140,8 +141,9 @@ const MicPage: React.FC = () => {
   useEffect(() => {
     if (uuid && token) {
       loadProgress(uuid, token).catch(console.error);
+      loadUniversalProtocols().catch(console.error);
     }
-  }, [uuid, token, loadProgress]);
+  }, [uuid, token, loadProgress, loadUniversalProtocols]);
 
   // Close mobile menu on outside click
   useEffect(() => {
@@ -374,6 +376,8 @@ const MicPage: React.FC = () => {
                 ) : (
                   <MicTree
                     pillars={pillars}
+                    customerId={uuid!}
+                    token={token!}
                     selectedObjectiveId={selectedObjectiveId}
                     editMode={editMode}
                     onSelect={selectObjective}
@@ -609,6 +613,8 @@ const MicPage: React.FC = () => {
                 ) : (
                   <MicTree
                     pillars={pillars}
+                    customerId={uuid!}
+                    token={token!}
                     selectedObjectiveId={selectedObjectiveId}
                     editMode={editMode}
                     onSelect={selectObjective}

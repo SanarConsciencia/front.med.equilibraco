@@ -11,6 +11,9 @@ import type {
   MicObjectiveCreate,
   MicItemCreate,
   SnapshotsResponse,
+  MicProtocol,
+  MicProtocolActivation,
+  MicProtocolActivationCreate,
 } from "../types/micTypes";
 
 const BASE =
@@ -278,6 +281,65 @@ export async function getCustomerSnapshots(
 ): Promise<SnapshotsResponse> {
   return jsonFetch<SnapshotsResponse>(
     `${INTAKE_BASE}/api/v1/scores/${encodeURIComponent(customerId)}/snapshots`,
+    { headers: authHeaders(token) },
+  );
+}
+
+// ── Protocolos ────────────────────────────────────────────────────────────────
+
+// GET /api/v1/mic/protocols?protocol_type=universal
+// GET /api/v1/mic/protocols?pillar_name=Proteínas
+// Ambas usan x-mic-admin-key — NO usar el JWT del médico
+
+/** Listar protocolos universales */
+export async function getUniversalProtocols(
+  adminKey: string,
+): Promise<MicProtocol[]> {
+  return jsonFetch<MicProtocol[]>(
+    `${BASE}/api/v1/mic/protocols?protocol_type=universal`,
+    { headers: adminHeaders(adminKey) },
+  );
+}
+
+/** Listar protocolos por pilar (para el médico en sesión) */
+export async function getProtocolsForPillar(
+  pillarName: string,
+  adminKey: string,
+): Promise<MicProtocol[]> {
+  return jsonFetch<MicProtocol[]>(
+    `${BASE}/api/v1/mic/protocols?pillar_name=${encodeURIComponent(pillarName)}`,
+    { headers: adminHeaders(adminKey) },
+  );
+}
+
+// POST /api/v1/mic/customers/{customerId}/protocols/{protocolId}/activate
+// Este sí usa JWT del médico (token normal)
+/** Activar un protocolo para un paciente */
+export async function activateProtocol(
+  customerId: string,
+  protocolId: number,
+  data: MicProtocolActivationCreate,
+  token: string,
+): Promise<MicProtocolActivation> {
+  return jsonFetch<MicProtocolActivation>(
+    `${BASE}/api/v1/mic/customers/${customerId}/protocols/${protocolId}/activate`,
+    {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify(data),
+    },
+  );
+}
+
+// GET /api/v1/mic/customers/{customerId}/protocols/activations
+// Usa JWT del médico
+/** Ver historial de activaciones de un paciente */
+export async function getProtocolActivations(
+  customerId: string,
+  token: string,
+): Promise<MicProtocolActivation[]> {
+  return jsonFetch<MicProtocolActivation[]>(
+    `${BASE}/api/v1/mic/customers/${customerId}/protocols/activations`,
     { headers: authHeaders(token) },
   );
 }

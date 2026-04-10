@@ -251,3 +251,35 @@ export interface SnapshotsResponse {
   customer_id: string;
   snapshots: DaySnapshot[];
 }
+
+// ============================================================
+// PROTOCOLS
+// ============================================================
+
+export interface MicProtocol {
+  id: number;
+  name: string;
+  protocol_type: "universal" | "pilar_especifico";
+  applies_to: string[];
+  trigger: string;
+  description: string | null;
+  content: string;
+  order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string | null;
+}
+
+export interface MicProtocolActivation {
+  id: number;
+  protocol_id: number;
+  customer_id: string;
+  medico_id: string;
+  notes: string | null;
+  activated_at: string;
+  protocol: MicProtocol;
+}
+
+export interface MicProtocolActivationCreate {
+  notes?: string | null;
+}

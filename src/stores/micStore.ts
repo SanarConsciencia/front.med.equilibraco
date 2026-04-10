@@ -7,6 +7,8 @@ import type {
   MicObjectiveCreate,
   MicItemCreate,
   MicProgressUpdate,
+  MicProtocol,
+  MicProtocolActivation,
 } from "../types/micTypes";
 
 // Admin key lives only in module memory — never persisted
@@ -24,6 +26,12 @@ interface MicStore {
   editMode: boolean;
   mobileView: "tree" | "detail";
   isDirty: boolean;
+
+  // ── Protocolos ────────────────────────────────────────────────────────────
+  universalProtocols: MicProtocol[];
+  pillarProtocols: Record<string, MicProtocol[]>;
+  activations: MicProtocolActivation[];
+  protocolsLoading: boolean;
 
   // Current patient context (needed to refresh after CRUD)
   _customerUuid: string | null;
@@ -77,6 +85,17 @@ interface MicStore {
     isVisible: boolean,
     token: string,
   ) => Promise<void>;
+
+  // ── Protocol actions ──────────────────────────────────────────────────────
+  loadUniversalProtocols: () => Promise<void>;
+  loadProtocolsForPillar: (pillarName: string) => Promise<void>;
+  activateProtocol: (
+    customerId: string,
+    protocolId: number,
+    notes: string | null,
+    token: string,
+  ) => Promise<MicProtocolActivation>;
+  loadActivations: (customerId: string, token: string) => Promise<void>;
 }
 
 function requireAdminKey(): string {
@@ -96,6 +115,11 @@ export const useMicStore = create<MicStore>((set, get) => ({
   editMode: false,
   mobileView: "tree",
   isDirty: false,
+
+  universalProtocols: [],
+  pillarProtocols: {},
+  activations: [],
+  protocolsLoading: false,
 
   _customerUuid: null,
   _token: null,
@@ -267,5 +291,67 @@ export const useMicStore = create<MicStore>((set, get) => ({
       isVisible,
       token,
     );
+  },
+
+  // ── Protocol actions ──────────────────────────────────────────────────────
+
+  loadUniversalProtocols: async () => {
+    const adminKey = import.meta.env.VITE_MIC_ADMIN_KEY as string;
+    set({ protocolsLoading: true });
+    try {
+      const protocols = await micService.getUniversalProtocols(adminKey);
+      set({ universalProtocols: protocols, protocolsLoading: false });
+    } catch (err) {
+      console.error("Error loading universal protocols:", err);
+      set({ protocolsLoading: false });
+    }
+  },
+
+  loadProtocolsForPillar: async (pillarName) => {
+    const { pillarProtocols } = get();
+    if (pillarProtocols[pillarName]) return; // Cache
+
+    const adminKey = import.meta.env.VITE_MIC_ADMIN_KEY as string;
+    // No bloqueamos UI con isLoading general para no interrumpir navegación del árbol,
+    // pero marcamos protocolsLoading por si se quiere visualmente indicar
+    set({ protocolsLoading: true });
+    try {
+      const protocols = await micService.getProtocolsForPillar(
+        pillarName,
+        adminKey,
+      );
+      set((state) => ({
+        pillarProtocols: { ...state.pillarProtocols, [pillarName]: protocols },
+        protocolsLoading: false,
+      }));
+    } catch (err) {
+      console.error(`Error loading protocols for pillar ${pillarName}:`, err);
+      // Fallback silencioso: marcamos vacío para no reintentar infinitamente en caso de error 404/500
+      set((state) => ({
+        pillarProtocols: { ...state.pillarProtocols, [pillarName]: [] },
+        protocolsLoading: false,
+      }));
+    }
+  },
+
+  activateProtocol: async (customerId, protocolId, notes, token) => {
+    const res = await micService.activateProtocol(
+      customerId,
+      protocolId,
+      { notes },
+      token,
+    );
+    // Refresh activations
+    await get().loadActivations(customerId, token);
+    return res;
+  },
+
+  loadActivations: async (customerId, token) => {
+    try {
+      const data = await micService.getProtocolActivations(customerId, token);
+      set({ activations: data });
+    } catch (err) {
+      console.error("Error loading activations:", err);
+    }
   },
 }));
