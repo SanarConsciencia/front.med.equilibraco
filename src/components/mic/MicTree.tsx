@@ -577,6 +577,7 @@ export function MicTree({
                         return (
                           <div
                             key={obj.id}
+                            id={`mic-obj-${obj.id}`}
                             onClick={() => {
                               onSelect(obj.id, pillar.id, phase.id);
                               if (mobileMode) setMobileView("detail");
