@@ -76,6 +76,12 @@ export function MicTree({
     loadUniversalProtocols();
   }, [loadUniversalProtocols]);
 
+  useEffect(() => {
+    pillars.forEach((pillar) => {
+      loadProtocolsForPillar(pillar.name);
+    });
+  }, [pillars, loadProtocolsForPillar]);
+
   const togglePillar = (pillar: MicPillarWithPhases) => {
     setExpandedPillars((prev) => {
       const next = new Set(prev);
