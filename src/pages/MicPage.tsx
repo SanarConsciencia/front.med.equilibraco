@@ -61,6 +61,28 @@ const MicPage: React.FC = () => {
   const [showDiscardModal, setShowDiscardModal] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
+  // Mobile: flat list of objectives for prev/next navigation
+  const allObjectivesFlat = pillars.flatMap((p) =>
+    p.phases.flatMap((ph) =>
+      ph.objectives.map((obj) => ({ obj, pillarId: p.id, phaseId: ph.id })),
+    ),
+  );
+  const currentObjIndex = allObjectivesFlat.findIndex(
+    (x) => x.obj.id === selectedObjectiveId,
+  );
+  const goToPrevObjective = () => {
+    if (currentObjIndex > 0) {
+      const prev = allObjectivesFlat[currentObjIndex - 1];
+      selectObjective(prev.obj.id, prev.pillarId, prev.phaseId);
+    }
+  };
+  const goToNextObjective = () => {
+    if (currentObjIndex < allObjectivesFlat.length - 1) {
+      const next = allObjectivesFlat[currentObjIndex + 1];
+      selectObjective(next.obj.id, next.pillarId, next.phaseId);
+    }
+  };
+
   const handleDeactivateEdit = () => {
     if (isDirty) {
       setShowDiscardModal(true);
@@ -592,6 +614,56 @@ const MicPage: React.FC = () => {
                     </p>
                   </div>
                 )}
+                {/* Prev / Next navigation */}
+                <div className="flex items-center gap-2 px-4 py-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={goToPrevObjective}
+                    disabled={currentObjIndex <= 0}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 19l-7-7 7-7"
+                      />
+                    </svg>
+                    Anterior
+                  </button>
+                  <span className="flex-1 text-center text-xs text-gray-400 dark:text-gray-500 tabular-nums">
+                    {currentObjIndex >= 0
+                      ? `${currentObjIndex + 1} / ${allObjectivesFlat.length}`
+                      : ""}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={goToNextObjective}
+                    disabled={currentObjIndex >= allObjectivesFlat.length - 1}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Siguiente
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
