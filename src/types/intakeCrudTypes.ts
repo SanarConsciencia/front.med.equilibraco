@@ -7,6 +7,7 @@ export interface CreateDayRequest {
   pattern_id?: string;
   training_day?: boolean;
   notes?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   meals?: any[];
 }
 
