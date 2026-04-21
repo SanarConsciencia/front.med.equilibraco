@@ -294,13 +294,47 @@ const PatientDayPage: React.FC = () => {
         {!loading && error && (
           <div className="bg-red-50 dark:bg-red-950/30 rounded-2xl p-4 text-center space-y-3">
             <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
-            <button
-              type="button"
-              onClick={handleReloadDay}
-              className="text-sm font-medium text-red-600 dark:text-red-400 underline"
-            >
-              Reintentar
-            </button>
+            <div className="flex items-center justify-center gap-4">
+              <button
+                type="button"
+                onClick={handleReloadDay}
+                className="text-sm font-medium text-red-600 dark:text-red-400 underline"
+              >
+                Reintentar
+              </button>
+              {error.includes("404") && (
+                <button
+                  type="button"
+                  onClick={handleCreateDay}
+                  disabled={creatingDay}
+                  className="flex items-center gap-2 px-4 min-h-[44px] text-sm font-medium rounded-xl bg-green-600 hover:bg-green-700 text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {creatingDay ? (
+                    <>
+                      <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white" />
+                      Creando...
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v16m8-8H4"
+                        />
+                      </svg>
+                      Crear día
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         )}
 
