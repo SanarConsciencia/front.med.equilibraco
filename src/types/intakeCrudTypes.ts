@@ -7,6 +7,7 @@ export interface CreateDayRequest {
   pattern_id?: string;
   training_day?: boolean;
   notes?: string;
+  meals?: any[];
 }
 
 // ── Meal CRUD ─────────────────────────────────────────────────────────────────
