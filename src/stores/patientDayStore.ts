@@ -202,7 +202,11 @@ export const usePatientDayStore = create<PatientDayState>((set, get) => ({
       customer_id: patientUuid,
       date,
     });
-    get()._updateFromAnalysis(patientUuid, date, data);
+    const key = `${patientUuid}-${date}`;
+    set((s) => ({
+      daysByKey: { ...s.daysByKey, [key]: data },
+      errorByKey: { ...s.errorByKey, [key]: "" }, // Limpiamos el error previo al crear
+    }));
     intakeCrudService.invalidateDayCache({ customer_id: patientUuid, date });
   },
 
@@ -220,8 +224,8 @@ export const usePatientDayStore = create<PatientDayState>((set, get) => ({
   // ── CRUD plato ────────────────────────────────────────────────────────────
 
   createMeal: async (patientUuid, date, dayId, payload) => {
-    const data = await intakeCrudService.createMeal(dayId, payload);
-    get()._updateFromAnalysis(patientUuid, date, data);
+    await intakeCrudService.createMeal(dayId, payload);
+    await get().loadDay(patientUuid, date);
     intakeCrudService.invalidateDayCache({ customer_id: patientUuid, date });
   },
 
