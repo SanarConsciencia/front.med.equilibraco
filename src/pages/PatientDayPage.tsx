@@ -80,8 +80,7 @@ const PatientDayPage: React.FC = () => {
     setCreatingDay(true);
     try {
       await createDay(uuid, date, {
-        pattern_id: undefined,
-        training_day: false,
+        meals: [],
       });
     } catch (err) {
       console.error("Error creating day:", err);
